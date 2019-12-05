@@ -12,7 +12,6 @@ def get_custom_dicts(data_dir):
     coco = COCO(json_file)
     with open(json_file) as f:
         imgs_anns = json.load(f)
-    debug = 1
     dataset_dicts = []
     imgs = imgs_anns['images']
     for img in imgs:
