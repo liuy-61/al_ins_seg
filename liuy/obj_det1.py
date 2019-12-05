@@ -246,6 +246,7 @@ def setup(args, num_classes=80, lr=0.00025,data_dir = None):
     cfg.merge_from_list(args.opts)
     cfg.SOLVER.BASE_LR = lr
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = num_classes
+    cfg.OUTPUT_DIR = '/media/tangyp/Data/model_file/OUTPUT_DIR'
     cfg.freeze()
     default_setup(cfg, args)
     debug = 1
