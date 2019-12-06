@@ -1,5 +1,5 @@
 import pickle
-
+# /home/tangyp/anaconda3/bin/python /home/tangyp/liuy/detectron2_origin/liuy/obj_det1.py --config-file /home/tangyp/detectron2/configs/COCO-Detection/faster_rcnn_R_50_C4_1x.yaml
 import torch
 import torch.nn as nn
 import logging
@@ -61,14 +61,21 @@ label_dict: dict
     value: list [[label_idx x_center y_center width height], ...]
 """
 
-
+"""把setup 作为内置函数
+    通过函数名来建立model 而不是让控制命令行参数args确定
+    model 文件的保存路径更改
+    
+    fit 函数里面把一些参数定义为属性
+"""
 class Detctron2AlObjDetModel(BaseDeepModel):
     """Faster_RCNN"""
 
     def __init__(self, args, project_id, model_name=None, num_classes=None, pytorch_model=None):
         self.args = args
-        self.num_class = num_classes
-        self.cfg = setup(args,  num_classes=num_classes)
+        self.project_id = project_id
+        self.num_classes = num_classes
+        self.model_name = model_name
+        self.cfg = self.setup()
         super(Detctron2AlObjDetModel, self).__init__(project_id)
         self.model, self.device = load_prj_model(project_id=project_id)
         if self.model is None:
@@ -76,6 +83,7 @@ class Detctron2AlObjDetModel(BaseDeepModel):
                 assert isinstance(
                     pytorch_model, nn.Module), 'pytorch_model must inherit from torch.nn.Module'
                 self.model = pytorch_model
+                print("get a pre-trained model from parameter for project{}".format(project_id))
             else:
                 assert model_name in MODEL_NAME.keys(
                 ), 'model_name must be one of {}'.format(MODEL_NAME.keys())
@@ -86,17 +94,34 @@ class Detctron2AlObjDetModel(BaseDeepModel):
                 self.model = LiuyTrainer.build_model(self.cfg)
                 self.model = self.model.to(self.device)
                 print("Initialize a pre-trained model for project{}".format(project_id))
-                # print(self.model)
         else:
             print("load project {} model from file".format(project_id))
         print(self.model)
 
-    def fit(self, data_dir, label=None, transform=None,
+    def setup(self):
+        """
+        Create configs and perform basic setups.
+        """
+        cfg = get_cfg()
+        cfg.merge_from_file(MODEL_NAME[self.model_name])
+        cfg.merge_from_list(args.opts)
+        cfg.MODEL.ROI_HEADS.NUM_CLASSES = self.num_classes
+        cfg.OUTPUT_DIR = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR', 'project_' + self.project_id)
+        if self.data_dir is not None:
+            DatasetCatalog.register("custom", lambda data_dir=data_dir: get_custom_dicts(data_dir))
+            cfg.DATASETS.TRAIN = ("custom",)
+        if self.lr is not None:
+            cfg.SOLVER.BASE_LR = self.lr
+        default_setup(cfg, args)
+        return cfg
+
+    def fit(self, data_dir, lr=1e-4,label=None, transform=None,
             batch_size=1, shuffle=False, data_names=None,
             optimize_method='Adam', optimize_param=None,
             loss='CrossEntropyLoss', loss_params=None, num_epochs=10,
             save_model=True, test_label=None, **kwargs):
-
+        self.data_dir = data_dir
+        self.lr = lr
         print("Command Line Args:", args)
         launch(
             self.func,
@@ -108,28 +133,28 @@ class Detctron2AlObjDetModel(BaseDeepModel):
         )
 
     def func(self, args, data_dir=None, model=None):
-        cfg = setup(args, data_dir=data_dir)
+        self.cfg = self.setup()
         if args.eval_only:
-            model = Trainer.build_model(cfg)
-            DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
-                cfg.MODEL.WEIGHTS, resume=args.resume
+            model = Trainer.build_model(self.cfg)
+            DetectionCheckpointer(model, save_dir=self.cfg .OUTPUT_DIR).resume_or_load(
+                self.cfg .MODEL.WEIGHTS, resume=args.resume
             )
-            res = Trainer.test(cfg, model)
+            res = Trainer.test(self.cfg, model)
             if comm.is_main_process():
-                verify_results(cfg, res)
-            if cfg.TEST.AUG.ENABLED:
-                res.update(Trainer.test_with_TTA(cfg, model))
+                verify_results(self.cfg, res)
+            if self.cfg .TEST.AUG.ENABLED:
+                res.update(Trainer.test_with_TTA(self.cfg, model))
             return res
 
         """
         If you'd like to do anything fancier than the standard training logic,
         consider writing your own training loop or subclassing the trainer.
         """
-        self.trainer = LiuyTrainer(cfg, model)
+        self.trainer = LiuyTrainer(self.cfg , model)
         self.trainer.resume_or_load(resume=args.resume)
-        if cfg.TEST.AUG.ENABLED:
+        if self.cfg .TEST.AUG.ENABLED:
             self.trainer.register_hooks(
-                [hooks.EvalHook(0, lambda: self.trainer.test_with_TTA(cfg, self.trainer.model))]
+                [hooks.EvalHook(0, lambda: self.trainer.test_with_TTA(self.cfg , self.trainer.model))]
             )
         self.trainer.train()
         self.save_model()
@@ -235,21 +260,21 @@ class Detctron2AlObjDetModel(BaseDeepModel):
             pickle.dump(self.trainer.model, f)
 
 
-def setup(args, num_classes=80, lr=0.00025, data_dir=None):
-    """
-    Create configs and perform basic setups.
-    """
-    cfg = get_cfg()
-    if data_dir is not None:
-        DatasetCatalog.register("custom", lambda data_dir=data_dir: get_custom_dicts(data_dir))
-        cfg.DATASETS.TRAIN = ("custom",)
-    cfg.merge_from_file(args.config_file)
-    cfg.merge_from_list(args.opts)
-    cfg.SOLVER.BASE_LR = lr
-    cfg.MODEL.ROI_HEADS.NUM_CLASSES = num_classes
-    cfg.OUTPUT_DIR = '/media/tangyp/Data/model_file/OUTPUT_DIR'
-    default_setup(cfg, args)
-    return cfg
+# def setup(args, num_classes=80, lr=0.00025, data_dir=None):
+#     """
+#     Create configs and perform basic setups.
+#     """
+#     cfg = get_cfg()
+#     if data_dir is not None:
+#         DatasetCatalog.register("custom", lambda data_dir=data_dir: get_custom_dicts(data_dir))
+#         cfg.DATASETS.TRAIN = ("custom",)
+#     cfg.merge_from_file(args.config_file)
+#     cfg.merge_from_list(args.opts)
+#     cfg.SOLVER.BASE_LR = lr
+#     cfg.MODEL.ROI_HEADS.NUM_CLASSES = num_classes
+#     cfg.OUTPUT_DIR = '/media/tangyp/Data/model_file/OUTPUT_DIR'
+#     default_setup(cfg, args)
+#     return cfg
 
 
 class Trainer(DefaultTrainer):
