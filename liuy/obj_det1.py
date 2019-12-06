@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import logging
 import os
+import dill as pickle
 from collections import OrderedDict
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.engine import default_setup
@@ -26,10 +27,17 @@ MODEL_NAME = {'Faster_RCNN': '/home/tangyp/detectron2/configs/COCO-Detection/fas
 
 __all__ = ['Detctron2AlObjDetModel',
            ]
+TRAINED_MODEL_DIR = '/media/tangyp/Data/model_file/trained_model'
 
+
+"""把setup 作为内置函数
+    通过函数名来建立model 而不是让控制命令行参数args确定
+    model 文件的保存路径更改 具体到某一个project
+    model模型的保存
+    
+    fit 函数里面把一些参数定义为属性
 """
-这一版本的代码fit可以正常训练，评估
-"""
+
 
 
 class Detctron2AlObjDetModel(BaseDeepModel):
@@ -38,7 +46,12 @@ class Detctron2AlObjDetModel(BaseDeepModel):
     def __init__(self, args, project_id, model_name=None, num_classes=None, pytorch_model=None):
         self.args = args
         self.num_class = num_classes
-        self.cfg = setup(args,  num_classes=num_classes)
+        self.project_id = project_id
+        self.model_name = model_name
+        self.num_classes =num_classes
+        self.data_dir = None
+        self.lr = None
+        self.cfg = self.setup()
         super(Detctron2AlObjDetModel, self).__init__(project_id)
         self.model, self.device = load_prj_model(project_id=project_id)
         if self.model is None:
@@ -46,6 +59,7 @@ class Detctron2AlObjDetModel(BaseDeepModel):
                 assert isinstance(
                     pytorch_model, nn.Module), 'pytorch_model must inherit from torch.nn.Module'
                 self.model = pytorch_model
+                print("get a pre-trained model from parameter for project{}".format(project_id))
             else:
                 assert model_name in MODEL_NAME.keys(
                 ), 'model_name must be one of {}'.format(MODEL_NAME.keys())
@@ -56,17 +70,33 @@ class Detctron2AlObjDetModel(BaseDeepModel):
                 self.model = LiuyTrainer.build_model(self.cfg)
                 self.model = self.model.to(self.device)
                 print("Initialize a pre-trained model for project{}".format(project_id))
-                # print(self.model)
         else:
             print("load project {} model from file".format(project_id))
         print(self.model)
 
+    def setup(self):
+        """
+            Create configs and perform basic setups.
+            """
+        cfg = get_cfg()
+        cfg.merge_from_file(MODEL_NAME[self.model_name])
+        cfg.merge_from_list(args.opts)
+        cfg.MODEL.ROI_HEADS.NUM_CLASSES = self.num_classes
+        if self.data_dir is not None:
+            DatasetCatalog.register("custom", lambda data_dir=self.data_dir: get_custom_dicts(data_dir))
+            cfg.DATASETS.TRAIN = ("custom",)
+        if self.lr is not None:
+            cfg.SOLVER.BASE_LR = self.lr
+        cfg.OUTPUT_DIR = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR', 'project_' + self.project_id)
+        cfg.freeze()
+        default_setup(cfg, args)
+        return cfg
     def fit(self, data_dir, label=None, transform=None,
             batch_size=1, shuffle=False, data_names=None,
             optimize_method='Adam', optimize_param=None,
             loss='CrossEntropyLoss', loss_params=None, num_epochs=10,
             save_model=True, test_label=None, **kwargs):
-
+        self.data_dir = data_dir
         print("Command Line Args:", args)
         launch(
             self.func,
@@ -76,6 +106,7 @@ class Detctron2AlObjDetModel(BaseDeepModel):
             dist_url=args.dist_url,
             args=(args, data_dir, self.model),
         )
+        self.save_model()
 
     def func(self, args, data_dir=None, model=None):
         cfg = setup(args, data_dir=data_dir)
@@ -102,6 +133,7 @@ class Detctron2AlObjDetModel(BaseDeepModel):
                 [hooks.EvalHook(0, lambda: trainer.test_with_TTA(cfg, trainer.model))]
             )
         trainer.train()
+
 
     def predict_proba(self, data_dir, data_names=None, transform=None, batch_size=1,
                       conf_thres=0.5, nms_thres=0.4,
@@ -176,39 +208,13 @@ class Detctron2AlObjDetModel(BaseDeepModel):
             return evaluate(self.model_ft, dataloader, self.device)
 
     def save_model(self):
-        pass
+        with open(os.path.join(TRAINED_MODEL_DIR, self._proj_id + '_model.pkl'), 'wb') as f:
+            pickle.dump(self.trainer.model, f)
 
 
 
 
-def set_model(model_name, num_classes ):
-    """
-        Create configs for building model
-    """
-    cfg = get_cfg()
-    cfg.merge_from_file(MODEL_NAME[model_name])
-    cfg.MODEL.ROI_HEADS.NUM_CLASSES = num_classes
-    return cfg
 
-def set_trainer(cfg,data_dir,lr=0.00025,label=None, transform=None,
-            batch_size=1, shuffle=False, data_names=None,
-            optimize_method='Adam', optimize_param=None,
-            loss='CrossEntropyLoss', loss_params=None, num_epochs=10,
-            save_model=True, test_label=None, **kwargs):
-    """
-        Create configs for building trainer
-    """
-    # DatasetCatalog.register("custom", lambda data_dir=data_dir: get_custom_dicts(data_dir))
-    # cfg.DATASETS.TRAIN = ("custom",)
-    # cfg.SOLVER.BASE_LR = lr
-    # cfg.freeze()
-    # default_setup(cfg)
-    new_cfg = cfg
-    DatasetCatalog.register("custom", lambda data_dir=data_dir: get_custom_dicts(data_dir))
-    new_cfg.DATASETS.TRAIN = ("custom",)
-    new_cfg.SOLVER.BASE_LR = lr
-    default_setup(cfg)
-    return new_cfg
 
 def setup(args, num_classes=80, lr=0.00025,data_dir = None):
     """
