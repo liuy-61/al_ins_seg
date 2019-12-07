@@ -18,12 +18,11 @@ from detectron2.modeling import GeneralizedRCNNWithTTA
 from detectron2.utils import comm
 from liuy.reg_dataset1 import get_custom_dicts
 from detectron2.engine.defaults import DefaultTrainer
-from detectron2.engine import hooks
 from alcloud.alcloud.utils.data_manipulate import create_img_dataloader, create_faster_rcnn_dataloader
 from alcloud.alcloud.utils.detection.engine import evaluate
 from alcloud.alcloud.utils.torch_utils import load_prj_model
 from liuy.LiuyTrainer import  LiuyTrainer
-from detectron2.engine import launch
+
 MODEL_NAME = {'Faster_RCNN': '/home/tangyp/detectron2/configs/COCO-Detection/faster_rcnn_R_50_C4_1x.yaml',
               }
 
@@ -32,13 +31,7 @@ __all__ = ['Detctron2AlObjDetModel',
 TRAINED_MODEL_DIR = '/media/tangyp/Data/model_file/trained_model'
 
 
-"""把setup 作为内置函数
-    通过函数名来建立model 而不是让控制命令行参数args确定
-    model 文件的保存路径更改 具体到某一个project
-    model模型的保存
-    
-    fit 函数里面把一些参数定义为属性
-"""
+
 
 
 
@@ -259,4 +252,3 @@ if __name__ == "__main__":
     model = Detctron2AlObjDetModel(args=args, project_id='1', model_name='Faster_RCNN', num_classes=80)
     model.fit(data_dir)
     proba = model.predict_proba(data_dir=data_val_dir)
-    debug = 1
