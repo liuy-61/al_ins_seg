@@ -1,11 +1,13 @@
+import cv2
 import torch
 import torch.nn as nn
 import logging
 import os
+from detectron2.utils.visualizer import Visualizer
 import dill as pickle
 from collections import OrderedDict
 from detectron2.checkpoint import DetectionCheckpointer
-from detectron2.engine import default_setup
+from detectron2.engine import default_setup, DefaultPredictor
 from detectron2.config.config import get_cfg
 from alcloud.alcloud.model_updating.interface import BaseDeepModel
 from detectron2.data import DatasetCatalog, MetadataCatalog
@@ -14,7 +16,7 @@ from detectron2.evaluation import verify_results, SemSegEvaluator, COCOEvaluator
     CityscapesEvaluator, PascalVOCDetectionEvaluator, LVISEvaluator, DatasetEvaluators
 from detectron2.modeling import GeneralizedRCNNWithTTA
 from detectron2.utils import comm
-from liuy.reg_dataset import get_custom_dicts
+from liuy.reg_dataset1 import get_custom_dicts
 from detectron2.engine.defaults import DefaultTrainer
 from detectron2.engine import hooks
 from alcloud.alcloud.utils.data_manipulate import create_img_dataloader, create_faster_rcnn_dataloader
@@ -88,7 +90,7 @@ class Detctron2AlObjDetModel(BaseDeepModel):
         if self.lr is not None:
             cfg.SOLVER.BASE_LR = self.lr
         cfg.OUTPUT_DIR = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR', 'project_' + self.project_id)
-        cfg.freeze()
+        # cfg.freeze()
         default_setup(cfg, args)
         return cfg
     def fit(self, data_dir, label=None, transform=None,
@@ -138,47 +140,32 @@ class Detctron2AlObjDetModel(BaseDeepModel):
     def predict_proba(self, data_dir, data_names=None, transform=None, batch_size=1,
                       conf_thres=0.5, nms_thres=0.4,
                       verbose=True, **kwargs):
-        '''proba predict.
-
-        :param data_dir: str
-            The path to the data folder.
-
-        :param data_names: list, optional (default=None)
-            The data names. If not specified, it will all the files in the
-            data_dir.
-
-        :param transform: torchvision.transforms.Compose, optional (default=None)
-            Transforms object that will be applied to the image data.
-
-        :return: pred: 2D array
-            The proba prediction result. Shape [n_samples, n_classes]
-        '''
-        result = []
-        self.model_ft.eval()
-        count = 1
-        dataloader = create_img_dataloader(data_dir=data_dir, labels=None, transform=transform,
-                                           batch_size=1, shuffle=False, data_names=data_names)
-        for batch in dataloader:
-            inputs = batch['image'][0]
-            # faster rcnn
-            """
-            During inference, the model requires only the input tensors, and returns the post-processed
-            predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
-            follows:
-                - boxes (Tensor[N, 4]): the predicted boxes in [x0, y0, x1, y1] format, with values between
-                  0 and H and 0 and W
-                - labels (Tensor[N]): the predicted labels for each image
-                - scores (Tensor[N]): the scores or each prediction
-            """
-            with torch.no_grad():
-                prediction = self.model_ft([inputs.to(self.device)])
-                if verbose:
-                    print("Prediction: " + str(count) + '/' + str(len(dataloader)))
-                    count += 1
-                    print(prediction)
-                result.append(prediction)
-        return result
-
+        cfg = self.setup()
+        cfg.MODEL.WEIGHTS = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR', 'model_final.pth')
+        cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST =conf_thres
+        predictor = DefaultPredictor(cfg)
+        DatasetCatalog.register("custom_val", lambda data_dir=data_dir: get_custom_dicts(data_dir))
+        data_loader = LiuyTrainer.build_test_loader(self.cfg, "custom_val")
+        scores = []
+        classes = []
+        for batch in data_loader:
+            for item in batch:
+                file_name = item['file_name']
+                img = cv2.imread(file_name)
+                prediction = predictor(img)
+                scores.append(prediction['instances'].scores)
+                classes.append(prediction['instances'].pred_classes)
+                visualizer = Visualizer(img[:, :, ::-1],
+                                        metadata=MetadataCatalog.get(
+                                            self.cfg.DATASETS.TEST[0] if len(self.cfg.DATASETS.TEST) else "__unused"
+                                        ),
+                                        scale=0.8, instance_mode=1
+                                        )
+                instances = prediction["instances"].to('cpu')
+                vis_output = visualizer.draw_instance_predictions(predictions=instances)
+                save_path = os.path.join('/media/tangyp/Data/model_file/output_test', os.path.basename(file_name))
+                vis_output.save(save_path)
+        return scores, classes
     def predict(self, data_dir, data_names=None, transform=None):
         '''predict
 
@@ -310,6 +297,9 @@ class Trainer(DefaultTrainer):
 
 if __name__ == "__main__":
     data_dir = '/media/tangyp/Data/coco/annotations/instances_train2014.json'
+    data_val_dir = '/media/tangyp/Data/coco/annotations/instances_val2014.json'
     args = default_argument_parser().parse_args()
     model = Detctron2AlObjDetModel(args=args, project_id='1', model_name='Faster_RCNN', num_classes=80)
-    model.fit(data_dir)
+    # model.fit(data_dir)
+    proba = model.predict_proba(data_dir=data_val_dir)
+    debug = 1

@@ -203,7 +203,7 @@ class Detctron2AlObjDetModel(BaseDeepModel):
         #         result.append(prediction)
         # return result
         # self.cfg.MODEL.WEIGHTS = os.path.join(self.cfg.OUTPUT_DIR, "model_final.pth")
-        self.cfg.MODEL.WEIGHTS = os.path.join('/home/tangyp/liuy/detectron2_origin/output/model_final.pth')
+        self.cfg.MODEL.WEIGHTS = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR', 'model_final.pth')
 
         # DatasetCatalog.register("custom_val", lambda data_dir=data_dir: get_custom_dicts(data_dir))
         # self.cfg.DATASETS.TRAIN = ("custom_val",)
