@@ -83,21 +83,13 @@ class Detctron2AlObjDetModel(BaseDeepModel):
             save_model=True, test_label=None, **kwargs):
         self.data_dir = data_dir
         print("Command Line Args:", args)
-        launch(
-            self.func,
-            args.num_gpus,
-            num_machines=args.num_machines,
-            machine_rank=args.machine_rank,
-            dist_url=args.dist_url,
-            args=(args, data_dir, self.model),
-        )
-        self.save_model()
-
-    def func(self, args, data_dir=None, model=None):
-        self.cfg = setup(args, project_id=self.project_id, model_name=self.model_name, num_classes=self.num_classes, data_dir=data_dir)
-        trainer = LiuyTrainer(self.cfg, model)
+        self.cfg = setup(args, project_id=self.project_id, model_name=self.model_name, num_classes=self.num_classes,
+                         data_dir=data_dir)
+        trainer = LiuyTrainer(self.cfg, self.model)
         trainer.resume_or_load(resume=args.resume)
         trainer.train()
+        self.save_model()
+
 
 
     def predict_proba(self, data_dir, data_names=None, transform=None, batch_size=1,
@@ -112,7 +104,9 @@ class Detctron2AlObjDetModel(BaseDeepModel):
                        - labels (Tensor[N]): the predicted labels for each image
                        - scores (Tensor[N]): the scores or each prediction
         """
-        self.cfg.MODEL.WEIGHTS = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR', 'model_final.pth')
+        # self.cfg.MODEL.WEIGHTS = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR', 'model_final.pth') 测试的最后权重
+
+        self.cfg.MODEL.WEIGHTS = os.path.join(self.cfg.OUTPUT_DIR, 'model_final.pth')
         self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST =conf_thres
         predictor = DefaultPredictor(self.cfg)
         DatasetCatalog.register("custom_val", lambda data_dir=data_dir: get_custom_dicts(data_dir))
@@ -126,17 +120,6 @@ class Detctron2AlObjDetModel(BaseDeepModel):
                 record = {'boxes': prediction['instances'].pred_boxes, 'labels': prediction['instances'].pred_classes, \
                           'scores': prediction['instances'].scores}
                 results.append(record)
-                debug = 1
-                # visualizer = Visualizer(img[:, :, ::-1],
-                #                         metadata=MetadataCatalog.get(
-                #                             self.cfg.DATASETS.TEST[0] if len(self.cfg.DATASETS.TEST) else "__unused"
-                #                         ),
-                #                         scale=0.8, instance_mode=1
-                #                         )
-                # instances = prediction["instances"].to('cpu')
-                # vis_output = visualizer.draw_instance_predictions(predictions=instances)
-                # save_path = os.path.join('/media/tangyp/Data/model_file/output_test', os.path.basename(file_name))
-                # vis_output.save(save_path)
         return results
 
 
@@ -191,7 +174,6 @@ def setup(args,project_id,model_name,num_classes=80, lr=0.00025,data_dir=None):
     cfg.SOLVER.BASE_LR = lr
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = num_classes
     cfg.OUTPUT_DIR = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR','project'+project_id)
-    # cfg.freeze()
     default_setup(cfg, args)
     return cfg
 
@@ -275,6 +257,6 @@ if __name__ == "__main__":
     data_val_dir = '/media/tangyp/Data/coco/annotations/instances_val2014.json'
     args = default_argument_parser().parse_args()
     model = Detctron2AlObjDetModel(args=args, project_id='1', model_name='Faster_RCNN', num_classes=80)
-    # model.fit(data_dir)
+    model.fit(data_dir)
     proba = model.predict_proba(data_dir=data_val_dir)
     debug = 1
