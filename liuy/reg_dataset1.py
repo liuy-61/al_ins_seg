@@ -32,9 +32,10 @@ def get_custom_dicts(data_dir):
             new_ann = {'iscrowd': ann['iscrowd'], 'bbox': ann['bbox'], 'category_id': ann['category_id'],
                             'segmentation': ann['segmentation'], 'bbox_mode': BoxMode(1)}
             annotation['annotations'].append(new_ann)
-            dataset_dict.update(new_img)
-            dataset_dict.update(annotation)
-            dataset_dicts.append(dataset_dict)
+        dataset_dict.update(new_img)
+        dataset_dict.update(annotation)
+        dataset_dicts.append(dataset_dict)
+        debug = 1
     return dataset_dicts
 
 if __name__ == "__main__":

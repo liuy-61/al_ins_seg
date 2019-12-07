@@ -138,34 +138,44 @@ class Detctron2AlObjDetModel(BaseDeepModel):
 
 
     def predict_proba(self, data_dir, data_names=None, transform=None, batch_size=1,
-                      conf_thres=0.5, nms_thres=0.4,
+                      conf_thres=0.7, nms_thres=0.4,
                       verbose=True, **kwargs):
+        """
+                   During inference, the model requires only the input tensors, and returns the post-processed
+                   predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
+                   follows:
+                       - boxes (Tensor[N, 4]): the predicted boxes in [x0, y0, x1, y1] format, with values between
+                         0 and H and 0 and W
+                       - labels (Tensor[N]): the predicted labels for each image
+                       - scores (Tensor[N]): the scores or each prediction
+        """
         cfg = self.setup()
         cfg.MODEL.WEIGHTS = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR', 'model_final.pth')
         cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST =conf_thres
         predictor = DefaultPredictor(cfg)
         DatasetCatalog.register("custom_val", lambda data_dir=data_dir: get_custom_dicts(data_dir))
         data_loader = LiuyTrainer.build_test_loader(self.cfg, "custom_val")
-        scores = []
-        classes = []
+        results = []
         for batch in data_loader:
             for item in batch:
                 file_name = item['file_name']
                 img = cv2.imread(file_name)
                 prediction = predictor(img)
-                scores.append(prediction['instances'].scores)
-                classes.append(prediction['instances'].pred_classes)
-                visualizer = Visualizer(img[:, :, ::-1],
-                                        metadata=MetadataCatalog.get(
-                                            self.cfg.DATASETS.TEST[0] if len(self.cfg.DATASETS.TEST) else "__unused"
-                                        ),
-                                        scale=0.8, instance_mode=1
-                                        )
-                instances = prediction["instances"].to('cpu')
-                vis_output = visualizer.draw_instance_predictions(predictions=instances)
-                save_path = os.path.join('/media/tangyp/Data/model_file/output_test', os.path.basename(file_name))
-                vis_output.save(save_path)
-        return scores, classes
+                record = {'boxes': prediction['instances'].pred_boxes, 'labels': prediction['instances'].pred_classes, \
+                          'scores': prediction['instances'].scores}
+                results.append(record)
+                # visualizer = Visualizer(img[:, :, ::-1],
+                #                         metadata=MetadataCatalog.get(
+                #                             self.cfg.DATASETS.TEST[0] if len(self.cfg.DATASETS.TEST) else "__unused"
+                #                         ),
+                #                         scale=0.8, instance_mode=1
+                #                         )
+                # instances = prediction["instances"].to('cpu')
+                # vis_output = visualizer.draw_instance_predictions(predictions=instances)
+                # save_path = os.path.join('/media/tangyp/Data/model_file/output_test', os.path.basename(file_name))
+                # vis_output.save(save_path)
+        return results
+
     def predict(self, data_dir, data_names=None, transform=None):
         '''predict
 
@@ -300,6 +310,6 @@ if __name__ == "__main__":
     data_val_dir = '/media/tangyp/Data/coco/annotations/instances_val2014.json'
     args = default_argument_parser().parse_args()
     model = Detctron2AlObjDetModel(args=args, project_id='1', model_name='Faster_RCNN', num_classes=80)
-    # model.fit(data_dir)
-    proba = model.predict_proba(data_dir=data_val_dir)
+    model.fit(data_dir)
+    # proba = model.predict_proba(data_dir=data_val_dir)
     debug = 1
