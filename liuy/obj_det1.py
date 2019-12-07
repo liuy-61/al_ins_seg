@@ -47,13 +47,13 @@ class Detctron2AlObjDetModel(BaseDeepModel):
 
     def __init__(self, args, project_id, model_name=None, num_classes=None, pytorch_model=None):
         self.args = args
-        self.num_class = num_classes
         self.project_id = project_id
         self.model_name = model_name
         self.num_classes =num_classes
         self.data_dir = None
         self.lr = None
-        self.cfg = self.setup()
+        # prepare cfg for build model
+        self.cfg = setup(args=args, project_id=project_id, model_name=model_name, num_classes=num_classes)
         super(Detctron2AlObjDetModel, self).__init__(project_id)
         self.model, self.device = load_prj_model(project_id=project_id)
         if self.model is None:
@@ -76,23 +76,6 @@ class Detctron2AlObjDetModel(BaseDeepModel):
             print("load project {} model from file".format(project_id))
         print(self.model)
 
-    def setup(self):
-        """
-            Create configs and perform basic setups.
-            """
-        cfg = get_cfg()
-        cfg.merge_from_file(MODEL_NAME[self.model_name])
-        cfg.merge_from_list(args.opts)
-        cfg.MODEL.ROI_HEADS.NUM_CLASSES = self.num_classes
-        if self.data_dir is not None:
-            DatasetCatalog.register("custom", lambda data_dir=self.data_dir: get_custom_dicts(data_dir))
-            cfg.DATASETS.TRAIN = ("custom",)
-        if self.lr is not None:
-            cfg.SOLVER.BASE_LR = self.lr
-        cfg.OUTPUT_DIR = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR', 'project_' + self.project_id)
-        # cfg.freeze()
-        default_setup(cfg, args)
-        return cfg
     def fit(self, data_dir, label=None, transform=None,
             batch_size=1, shuffle=False, data_names=None,
             optimize_method='Adam', optimize_param=None,
@@ -111,29 +94,9 @@ class Detctron2AlObjDetModel(BaseDeepModel):
         self.save_model()
 
     def func(self, args, data_dir=None, model=None):
-        cfg = setup(args, data_dir=data_dir)
-        if args.eval_only:
-            model = Trainer.build_model(cfg)
-            DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
-                cfg.MODEL.WEIGHTS, resume=args.resume
-            )
-            res = Trainer.test(cfg, model)
-            if comm.is_main_process():
-                verify_results(cfg, res)
-            if cfg.TEST.AUG.ENABLED:
-                res.update(Trainer.test_with_TTA(cfg, model))
-            return res
-
-        """
-        If you'd like to do anything fancier than the standard training logic,
-        consider writing your own training loop or subclassing the trainer.
-        """
-        trainer = LiuyTrainer(cfg, model)
+        self.cfg = setup(args, project_id=self.project_id, model_name=self.model_name, num_classes=self.num_classes, data_dir=data_dir)
+        trainer = LiuyTrainer(self.cfg, model)
         trainer.resume_or_load(resume=args.resume)
-        if cfg.TEST.AUG.ENABLED:
-            trainer.register_hooks(
-                [hooks.EvalHook(0, lambda: trainer.test_with_TTA(cfg, trainer.model))]
-            )
         trainer.train()
 
 
@@ -149,10 +112,9 @@ class Detctron2AlObjDetModel(BaseDeepModel):
                        - labels (Tensor[N]): the predicted labels for each image
                        - scores (Tensor[N]): the scores or each prediction
         """
-        cfg = self.setup()
-        cfg.MODEL.WEIGHTS = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR', 'model_final.pth')
-        cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST =conf_thres
-        predictor = DefaultPredictor(cfg)
+        self.cfg.MODEL.WEIGHTS = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR', 'model_final.pth')
+        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST =conf_thres
+        predictor = DefaultPredictor(self.cfg)
         DatasetCatalog.register("custom_val", lambda data_dir=data_dir: get_custom_dicts(data_dir))
         data_loader = LiuyTrainer.build_test_loader(self.cfg, "custom_val")
         results = []
@@ -164,6 +126,7 @@ class Detctron2AlObjDetModel(BaseDeepModel):
                 record = {'boxes': prediction['instances'].pred_boxes, 'labels': prediction['instances'].pred_classes, \
                           'scores': prediction['instances'].scores}
                 results.append(record)
+                debug = 1
                 # visualizer = Visualizer(img[:, :, ::-1],
                 #                         metadata=MetadataCatalog.get(
                 #                             self.cfg.DATASETS.TEST[0] if len(self.cfg.DATASETS.TEST) else "__unused"
@@ -175,6 +138,7 @@ class Detctron2AlObjDetModel(BaseDeepModel):
                 # save_path = os.path.join('/media/tangyp/Data/model_file/output_test', os.path.basename(file_name))
                 # vis_output.save(save_path)
         return results
+
 
     def predict(self, data_dir, data_names=None, transform=None):
         '''predict
@@ -213,7 +177,7 @@ class Detctron2AlObjDetModel(BaseDeepModel):
 
 
 
-def setup(args, num_classes=80, lr=0.00025,data_dir = None):
+def setup(args,project_id,model_name,num_classes=80, lr=0.00025,data_dir=None):
     """
     Create configs and perform basic setups.
     """
@@ -221,15 +185,16 @@ def setup(args, num_classes=80, lr=0.00025,data_dir = None):
     if data_dir is not None:
         DatasetCatalog.register("custom", lambda data_dir=data_dir: get_custom_dicts(data_dir))
         cfg.DATASETS.TRAIN = ("custom",)
-    cfg.merge_from_file(args.config_file)
+    config_file = MODEL_NAME[model_name]
+    cfg.merge_from_file(config_file)
     cfg.merge_from_list(args.opts)
     cfg.SOLVER.BASE_LR = lr
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = num_classes
-    cfg.OUTPUT_DIR = '/media/tangyp/Data/model_file/OUTPUT_DIR'
-    cfg.freeze()
+    cfg.OUTPUT_DIR = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR','project'+project_id)
+    # cfg.freeze()
     default_setup(cfg, args)
-    debug = 1
     return cfg
+
 class Trainer(DefaultTrainer):
     """
     We use the "DefaultTrainer" which contains a number pre-defined logic for
@@ -310,6 +275,6 @@ if __name__ == "__main__":
     data_val_dir = '/media/tangyp/Data/coco/annotations/instances_val2014.json'
     args = default_argument_parser().parse_args()
     model = Detctron2AlObjDetModel(args=args, project_id='1', model_name='Faster_RCNN', num_classes=80)
-    model.fit(data_dir)
-    # proba = model.predict_proba(data_dir=data_val_dir)
+    # model.fit(data_dir)
+    proba = model.predict_proba(data_dir=data_val_dir)
     debug = 1
