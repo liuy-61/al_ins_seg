@@ -1,7 +1,7 @@
 from detectron2.data import DatasetCatalog
 from detectron2.engine.defaults import DefaultTrainer
 from detectron2.engine.train_loop import SimpleTrainer
-from reg_dataset import get_custom_dicts
+# from detectron2.reg_dataset1 import get_custom_dicts
 from detectron2.utils import comm
 from torch.nn.parallel import DistributedDataParallel
 from detectron2.checkpoint import DetectionCheckpointer

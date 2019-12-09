@@ -78,11 +78,25 @@ class Detctron2AlObjDetModel(BaseDeepModel):
         print("Command Line Args:", args)
         self.cfg = setup(args, project_id=self.project_id, model_name=self.model_name, num_classes=self.num_classes,
                          data_dir=data_dir)
-        trainer = LiuyTrainer(self.cfg, self.model)
-        trainer.resume_or_load(resume=args.resume)
-        trainer.train()
+        self.trainer = LiuyTrainer(self.cfg, self.model)
+        self.trainer.resume_or_load(resume=args.resume)
+        self.trainer.train()
         self.save_model()
 
+    def fit2(self, data_dir, label=None, transform=None,
+            batch_size=1, shuffle=False, data_names=None,
+            optimize_method='Adam', optimize_param=None,
+            loss='CrossEntropyLoss', loss_params=None, num_epochs=10,
+            save_model=True, test_label=None, **kwargs):
+
+        self.data_dir = data_dir
+        print("Command Line Args:", args)
+        self.cfg = setup(args, project_id=self.project_id, model_name=self.model_name, num_classes=self.num_classes,
+                         data_dir=data_dir)
+        self.trainer = LiuyTrainer(self.cfg, self.model)
+        self.trainer.resume_or_load(resume=args.resume)
+
+        self.save_model()
 
 
     def predict_proba(self, data_dir, data_names=None, transform=None, batch_size=1,
@@ -97,8 +111,9 @@ class Detctron2AlObjDetModel(BaseDeepModel):
                        - labels (Tensor[N]): the predicted labels for each image
                        - scores (Tensor[N]): the scores or each prediction
         """
-        # self.cfg.MODEL.WEIGHTS = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR', 'model_final.pth') 测试的最后权重
-
+        #测试权重
+        # self.cfg.MODEL.WEIGHTS = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR', 'model_final.pth')
+        #实际运行权重
         self.cfg.MODEL.WEIGHTS = os.path.join(self.cfg.OUTPUT_DIR, 'model_final.pth')
         self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST =conf_thres
         predictor = DefaultPredictor(self.cfg)
@@ -249,6 +264,7 @@ if __name__ == "__main__":
     data_dir = '/media/tangyp/Data/coco/annotations/instances_train2014.json'
     data_val_dir = '/media/tangyp/Data/coco/annotations/instances_val2014.json'
     args = default_argument_parser().parse_args()
-    model = Detctron2AlObjDetModel(args=args, project_id='1', model_name='Faster_RCNN', num_classes=80)
-    model.fit(data_dir)
+    model = Detctron2AlObjDetModel(args=args, project_id='2', model_name='Faster_RCNN', num_classes=80)
+    # model.fit(data_dir)
     proba = model.predict_proba(data_dir=data_val_dir)
+    debug = 1
