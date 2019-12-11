@@ -1,63 +1,39 @@
-import pickle
-
+import cv2
 import torch
 import torch.nn as nn
 import logging
 import os
+from detectron2.utils.visualizer import Visualizer
+import dill as pickle
 from collections import OrderedDict
-from detectron2.engine import default_setup
+from detectron2.checkpoint import DetectionCheckpointer
+from detectron2.engine import default_setup, DefaultPredictor
 from detectron2.config.config import get_cfg
 from alcloud.alcloud.model_updating.interface import BaseDeepModel
 from detectron2.data import DatasetCatalog, MetadataCatalog
 from detectron2.engine import default_argument_parser
-from detectron2.evaluation import SemSegEvaluator, COCOEvaluator, COCOPanopticEvaluator, \
+from detectron2.evaluation import verify_results, SemSegEvaluator, COCOEvaluator, COCOPanopticEvaluator, \
     CityscapesEvaluator, PascalVOCDetectionEvaluator, LVISEvaluator, DatasetEvaluators
 from detectron2.modeling import GeneralizedRCNNWithTTA
 from detectron2.utils import comm
-from reg_dataset import get_custom_dicts
+from liuy.reg_dataset1 import get_custom_dicts,register_all_cityscapes
 from detectron2.engine.defaults import DefaultTrainer
-from alcloud.alcloud.config import TRAINED_DEEP_MODEL_DIR
 from alcloud.alcloud.utils.data_manipulate import create_img_dataloader, create_faster_rcnn_dataloader
 from alcloud.alcloud.utils.detection.engine import evaluate
 from alcloud.alcloud.utils.torch_utils import load_prj_model
 from liuy.LiuyTrainer import  LiuyTrainer
 
 MODEL_NAME = {'Faster_RCNN': '/home/tangyp/detectron2/configs/COCO-Detection/faster_rcnn_R_50_C4_1x.yaml',
+              'Mask_RCNN':'/home/tangyp/liuy/detectron2_origin/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_3x.yaml'
               }
 
 __all__ = ['Detctron2AlObjDetModel',
            ]
-test_path='/media/tangyp/Data/model_file/output_test'
-
-OUTPUT_DIR = '/media/tangyp/Data/model_file/OUTPUT_DIR'
-
-"""
-Pytorch official faster rcnn dataset requirement:
-
-label_dict: dict
-    key: file name
-    value: list [[label_idx x0 y0 x1 y1], ...]
-
-the dataset __getitem__ of object detection should return:
-
-    image: a PIL Image of size (H, W)
-    target: a dict containing the following fields
-        boxes (FloatTensor[N, 4]): the coordinates of the N bounding boxes in [x0, y0, x1, y1] format, ranging from 0 to W and 0 to H
-        labels (Int64Tensor[N]): the label for each bounding box
-        image_id (Int64Tensor[1]): an image identifier. It should be unique between all the images in the dataset, and is used during evaluation
-        area (Tensor[N]): The area of the bounding box. This is used during evaluation with the COCO metric, to separate the metric scores between small, medium and large boxes.
-        iscrowd (UInt8Tensor[N]): instances with iscrowd=True will be ignored during evaluation.
-        (optionally) masks (UInt8Tensor[N, H, W]): The segmentation masks for each one of the objects
-        (optionally) keypoints (FloatTensor[N, K, 3]): For each one of the N objects, it contains the K keypoints in [x, y, visibility] format, defining the object. visibility=0 means that the keypoint is not visible. Note that for data augmentation, the notion of flipping a keypoint is dependent on the data representation, and you should probably adapt references/detection/transforms.py for your new keypoint representation
+TRAINED_MODEL_DIR = '/media/tangyp/Data/model_file/trained_model'
 
 
-YOLOv3 dataset requirements:
 
-ImgObjDetDataset(data_dir, label_dict)
-label_dict: dict
-    key: file name
-    value: list [[label_idx x_center y_center width height], ...]
-"""
+
 
 
 class Detctron2AlObjDetModel(BaseDeepModel):
@@ -67,8 +43,11 @@ class Detctron2AlObjDetModel(BaseDeepModel):
         self.args = args
         self.project_id = project_id
         self.model_name = model_name
-        self.num_class = num_classes
-        self.cfg = self.set_model()
+        self.num_classes =num_classes
+        self.data_dir = None
+        self.lr = None
+        # prepare cfg for build model
+        self.cfg = setup(args=args, project_id=project_id, model_name=model_name, num_classes=num_classes)
         super(Detctron2AlObjDetModel, self).__init__(project_id)
         self.model, self.device = load_prj_model(project_id=project_id)
         if self.model is None:
@@ -76,6 +55,7 @@ class Detctron2AlObjDetModel(BaseDeepModel):
                 assert isinstance(
                     pytorch_model, nn.Module), 'pytorch_model must inherit from torch.nn.Module'
                 self.model = pytorch_model
+                print("get a pre-trained model from parameter for project{}".format(project_id))
             else:
                 assert model_name in MODEL_NAME.keys(
                 ), 'model_name must be one of {}'.format(MODEL_NAME.keys())
@@ -88,115 +68,65 @@ class Detctron2AlObjDetModel(BaseDeepModel):
                 print("Initialize a pre-trained model for project{}".format(project_id))
         else:
             print("load project {} model from file".format(project_id))
-        print('model initalize sucsessfully')
+        print(self.model)
 
-    def set_model(self):
-        cfg = get_cfg()
-        cfg.merge_from_file(MODEL_NAME[self.model_name])
-        cfg.merge_from_list(self.args.opts)
-        cfg.MODEL.ROI_HEADS.NUM_CLASSES = self.num_class
-        cfg.OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'project_' + self.project_id)
-        default_setup(cfg, self.args)
-        return cfg
+    def fit(self, data_dir, label=None, transform=None,
+            batch_size=1, shuffle=False, data_names=None,
+            optimize_method='Adam', optimize_param=None,
+            loss='CrossEntropyLoss', loss_params=None, num_epochs=10,
+            save_model=True, test_label=None, **kwargs):
+        self.data_dir = data_dir
+        print("Command Line Args:", args)
+        self.cfg = setup(args, project_id=self.project_id, model_name=self.model_name, num_classes=self.num_classes,
+                         data_dir=data_dir)
+        self.trainer = LiuyTrainer(self.cfg, self.model)
+        self.trainer.resume_or_load(resume=args.resume)
+        self.trainer.train()
+        self.save_model()
 
-    def set_trainer(self):
-        cfg = get_cfg()
-        cfg.merge_from_file(MODEL_NAME[self.model_name])
-        cfg.merge_from_list(self.args.opts)
-        cfg.MODEL.ROI_HEADS.NUM_CLASSES = self.num_class
-        cfg.OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'project_' + self.project_id)
-        DatasetCatalog.register("custom", lambda path=self.data_dir: get_custom_dicts(path))
-        cfg.DATASETS.TRAIN = ("custom",)
-        cfg.SOLVER.BASE_LR = self.lr
-        default_setup(cfg, self.args)
-        return cfg
-
-    def setup(self):
-        """
-        Create configs and perform basic setups.
-        """
-        cfg = get_cfg()
-        DatasetCatalog.register("custom", lambda data_dir=self.data_dir: get_custom_dicts(data_dir))
-        cfg.DATASETS.TRAIN = ("custom",)
-        # cfg.merge_from_file(args.config_file)
-        cfg.merge_from_list(args.opts)
-        if self.lr is not None:
-            cfg.SOLVER.BASE_LR = self.lr
-        cfg.MODEL.ROI_HEADS.NUM_CLASSES = self.num_class
-        cfg.OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'project_' + self.project_id)
-        cfg.freeze()
-        default_setup(cfg, self.args)
-        debug = 1
-        return cfg
-    def fit(self, data_dir, lr ,label=None, transform=None,
+    def fit2(self, data_dir, label=None, transform=None,
             batch_size=1, shuffle=False, data_names=None,
             optimize_method='Adam', optimize_param=None,
             loss='CrossEntropyLoss', loss_params=None, num_epochs=10,
             save_model=True, test_label=None, **kwargs):
 
         self.data_dir = data_dir
-        self.lr = lr
         print("Command Line Args:", args)
-        self.func()
-        # launch(
-        #     self.func,
-        #     args.num_gpus,
-        #     num_machines=args.num_machines,
-        #     machine_rank=args.machine_rank,
-        #     dist_url=args.dist_url,
-        #     args=(args, data_dir, self.model),
-        # )
-
-    def func(self):
-        self.cfg = self.setup()
+        self.cfg = setup(args, project_id=self.project_id, model_name=self.model_name, num_classes=self.num_classes,
+                         data_dir=data_dir)
         self.trainer = LiuyTrainer(self.cfg, self.model)
-        self.trainer.resume_or_load(resume=self.args.resume)
-        self.trainer.train()
+        self.trainer.resume_or_load(resume=args.resume)
+
         self.save_model()
 
+
     def predict_proba(self, data_dir, data_names=None, transform=None, batch_size=1,
-                      conf_thres=0.5, nms_thres=0.4,
+                      conf_thres=0.7, nms_thres=0.4,
                       verbose=True, **kwargs):
-        '''proba predict.
+        """
+                   During inference, the model requires only the input tensors, and returns the post-processed
+                   predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
+                   follows:
+                       - boxes (Tensor[N, 4]): the predicted boxes in [x0, y0, x1, y1] format, with values between
+                         0 and H and 0 and W
+                       - labels (Tensor[N]): the predicted labels for each image
+                       - scores (Tensor[N]): the scores or each prediction
+        """
+        self.cfg.MODEL.WEIGHTS = os.path.join(self.cfg.OUTPUT_DIR, 'model_final.pth')
+        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST =conf_thres
+        predictor = DefaultPredictor(self.cfg)
+        data_loader = LiuyTrainer.build_test_loader(self.cfg, "cityscapes_fine_instance_seg_test")
+        results = []
+        for batch in data_loader:
+            for item in batch:
+                file_name = item['file_name']
+                img = cv2.imread(file_name)
+                prediction = predictor(img)
+                record = {'boxes': prediction['instances'].pred_boxes, 'labels': prediction['instances'].pred_classes, \
+                          'scores': prediction['instances'].scores}
+                results.append(record)
+        return results
 
-        :param data_dir: str
-            The path to the data folder.
-
-        :param data_names: list, optional (default=None)
-            The data names. If not specified, it will all the files in the
-            data_dir.
-
-        :param transform: torchvision.transforms.Compose, optional (default=None)
-            Transforms object that will be applied to the image data.
-
-        :return: pred: 2D array
-            The proba prediction result. Shape [n_samples, n_classes]
-        '''
-        result = []
-        self.model_ft.eval()
-        count = 1
-        dataloader = create_img_dataloader(data_dir=data_dir, labels=None, transform=transform,
-                                           batch_size=1, shuffle=False, data_names=data_names)
-        for batch in dataloader:
-            inputs = batch['image'][0]
-            # faster rcnn
-            """
-            During inference, the model requires only the input tensors, and returns the post-processed
-            predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
-            follows:
-                - boxes (Tensor[N, 4]): the predicted boxes in [x0, y0, x1, y1] format, with values between
-                  0 and H and 0 and W
-                - labels (Tensor[N]): the predicted labels for each image
-                - scores (Tensor[N]): the scores or each prediction
-            """
-            with torch.no_grad():
-                prediction = self.model_ft([inputs.to(self.device)])
-                if verbose:
-                    print("Prediction: " + str(count) + '/' + str(len(dataloader)))
-                    count += 1
-                    print(prediction)
-                result.append(prediction)
-        return result
 
     def predict(self, data_dir, data_names=None, transform=None):
         '''predict
@@ -227,29 +157,32 @@ class Detctron2AlObjDetModel(BaseDeepModel):
             return evaluate(self.model_ft, dataloader, self.device)
 
     def save_model(self):
-        with open(os.path.join(TRAINED_DEEP_MODEL_DIR, self._proj_id + '_model.pkl'), 'wb') as f:
+        with open(os.path.join(TRAINED_MODEL_DIR, self._proj_id + '_model.pkl'), 'wb') as f:
             pickle.dump(self.trainer.model, f)
 
 
-# def setup(args, num_classes=80, lr=0.00025, data_dir=None):
-#     """
-#     Create configs and perform basic setups.
-#     """
-#     cfg = get_cfg()
-#     if data_dir is not None:
-#         DatasetCatalog.register("custom", lambda data_dir=data_dir: get_custom_dicts(data_dir))
-#         cfg.DATASETS.TRAIN = ("custom",)
-#     cfg.merge_from_file(args.config_file)
-#     cfg.merge_from_list(args.opts)
-#     cfg.SOLVER.BASE_LR = lr
-#     cfg.MODEL.ROI_HEADS.NUM_CLASSES = num_classes
-#     # cfg.OUTPUT_DIR = '/media/tangyp/Data/model_file/OUTPUT_DIR'
-#     cfg.freeze()
-#     default_setup(cfg, args)
-#     debug = 1
-#     return cfg
 
 
+
+
+def setup(args,project_id,model_name,num_classes=80, lr=0.00025,data_dir=None):
+    """
+    Create configs and perform basic setups.
+    """
+    cfg = get_cfg()
+    if data_dir is not None:
+        # DatasetCatalog.register("custom", lambda data_dir=data_dir: get_custom_dicts(data_dir))
+        # cfg.DATASETS.TRAIN = ("custom",)
+        register_all_cityscapes(data_dir)
+        cfg.DATASETS.TRAIN = ("cityscapes_fine_instance_seg_train")
+    config_file = MODEL_NAME[model_name]
+    cfg.merge_from_file(config_file)
+    cfg.merge_from_list(args.opts)
+    cfg.SOLVER.BASE_LR = lr
+    cfg.MODEL.ROI_HEADS.NUM_CLASSES = num_classes
+    cfg.OUTPUT_DIR = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR','project'+project_id)
+    default_setup(cfg, args)
+    return cfg
 
 class Trainer(DefaultTrainer):
     """
@@ -327,7 +260,9 @@ class Trainer(DefaultTrainer):
 
 
 if __name__ == "__main__":
-    data_dir = '/media/tangyp/Data/coco/annotations/instances_train2014.json'
+    data_dir = '/media/tangyp/Data'
     args = default_argument_parser().parse_args()
-    model = Detctron2AlObjDetModel(args=args, project_id='1', model_name='Faster_RCNN', num_classes=80)
-    model.fit(data_dir=data_dir, lr=1e-4)
+    model = Detctron2AlObjDetModel(args=args, project_id='3', model_name='Mask_RCNN', num_classes=1)
+    model.fit(data_dir)
+    proba = model.predict_proba(data_dir=data_dir)
+    debug = 1
