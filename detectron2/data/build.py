@@ -258,10 +258,11 @@ def get_detection_dataset_dicts(
             that match each dataset in `dataset_names`.
     """
     assert len(dataset_names)
+    debug = 1
     dataset_dicts = [DatasetCatalog.get(dataset_name) for dataset_name in dataset_names]
     for dataset_name, dicts in zip(dataset_names, dataset_dicts):
         assert len(dicts), "Dataset '{}' is empty!".format(dataset_name)
-
+    debug = 1
     if proposal_files is not None:
         assert len(dataset_names) == len(proposal_files)
         # load precomputed proposals from proposal files
@@ -269,9 +270,9 @@ def get_detection_dataset_dicts(
             load_proposals_into_dataset(dataset_i_dicts, proposal_file)
             for dataset_i_dicts, proposal_file in zip(dataset_dicts, proposal_files)
         ]
-
+    debug = 1
     dataset_dicts = list(itertools.chain.from_iterable(dataset_dicts))
-
+    debug = 1
     has_instances = "annotations" in dataset_dicts[0]
     # Keep images without instance-level GT if the dataset has semantic labels.
     if filter_empty and has_instances and "sem_seg_file_name" not in dataset_dicts[0]:
@@ -287,37 +288,38 @@ def get_detection_dataset_dicts(
             print_instances_class_histogram(dataset_dicts, class_names)
         except AttributeError:  # class names are not available for this dataset
             pass
+    debug = 1
     return dataset_dicts
 
 
 def build_detection_train_loader(cfg, mapper=None):
     """
-    A data loader is created by the following steps:
+       A data loader is created by the following steps:
 
-    1. Use the dataset names in config to query :class:`DatasetCatalog`, and obtain a list of dicts.
-    2. Start workers to work on the dicts. Each worker will:
-      * Map each metadata dict into another format to be consumed by the model.
-      * Batch them by simply putting dicts into a list.
-    The batched ``list[mapped_dict]`` is what this dataloader will return.
+       1. Use the dataset names in config to query :class:`DatasetCatalog`, and obtain a list of dicts.
+       2. Start workers to work on the dicts. Each worker will:
+         * Map each metadata dict into another format to be consumed by the model.
+         * Batch them by simply putting dicts into a list.
+       The batched ``list[mapped_dict]`` is what this dataloader will return.
 
-    Args:
-        cfg (CfgNode): the config
-        mapper (callable): a callable which takes a sample (dict) from dataset and
-            returns the format to be consumed by the model.
-            By default it will be `DatasetMapper(cfg, True)`.
+       Args:
+           cfg (CfgNode): the config
+           mapper (callable): a callable which takes a sample (dict) from dataset and
+               returns the format to be consumed by the model.
+               By default it will be `DatasetMapper(cfg, True)`.
 
-    Returns:
-        a torch DataLoader object
-    """
+       Returns:
+           a torch DataLoader object
+       """
     num_workers = get_world_size()
-    images_per_batch = cfg.SOLVER.IMS_PER_BATCH
+    images_per_batch = 1
     assert (
-        images_per_batch % num_workers == 0
+            images_per_batch % num_workers == 0
     ), "SOLVER.IMS_PER_BATCH ({}) must be divisible by the number of workers ({}).".format(
         images_per_batch, num_workers
     )
     assert (
-        images_per_batch >= num_workers
+            images_per_batch >= num_workers
     ), "SOLVER.IMS_PER_BATCH ({}) must be larger than the number of workers ({}).".format(
         images_per_batch, num_workers
     )
@@ -331,8 +333,9 @@ def build_detection_train_loader(cfg, mapper=None):
         else 0,
         proposal_files=cfg.DATASETS.PROPOSAL_FILES_TRAIN if cfg.MODEL.LOAD_PROPOSALS else None,
     )
+    debug = 1
     dataset = DatasetFromList(dataset_dicts, copy=False)
-
+    debug = 1
     # Bin edges for batching images with similar aspect ratios. If ASPECT_RATIO_GROUPING
     # is enabled, we define two bins with an edge at height / width = 1.
     group_bin_edges = [1] if cfg.DATALOADER.ASPECT_RATIO_GROUPING else []
@@ -364,6 +367,7 @@ def build_detection_train_loader(cfg, mapper=None):
         collate_fn=trivial_batch_collator,
         worker_init_fn=worker_init_reset_seed,
     )
+    debug = 1
     return data_loader
 
 

@@ -17,7 +17,7 @@ import torch
 from fvcore.common.file_io import PathManager
 from fvcore.nn.precise_bn import get_bn_modules
 from torch.nn.parallel import DistributedDataParallel
-
+from detectron2.config.config import get_cfg
 import detectron2.data.transforms as T
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.data import (
@@ -80,7 +80,7 @@ def default_argument_parser():
     return parser
 
 
-def default_setup(cfg, args):
+def default_setup(cfg, args=None):
     """
     Perform some basic common setups at the beginning of a job, including:
 
@@ -149,7 +149,7 @@ class DefaultPredictor:
         self.model = build_model(self.cfg)
         self.model.eval()
         self.metadata = MetadataCatalog.get(cfg.DATASETS.TEST[0])
-
+        debug = 1
         checkpointer = DetectionCheckpointer(self.model)
         checkpointer.load(cfg.MODEL.WEIGHTS)
 
@@ -179,6 +179,7 @@ class DefaultPredictor:
 
         inputs = {"image": image, "height": height, "width": width}
         predictions = self.model([inputs])[0]
+        debug  = 1
         return predictions
 
 
@@ -225,7 +226,7 @@ class DefaultTrainer(SimpleTrainer):
         model = self.build_model(cfg)
         optimizer = self.build_optimizer(cfg, model)
         data_loader = self.build_train_loader(cfg)
-
+        debug = 1
         # For training, wrap with DDP. But don't need this for inference.
         if comm.get_world_size() > 1:
             model = DistributedDataParallel(
@@ -476,3 +477,23 @@ class DefaultTrainer(SimpleTrainer):
         if len(results) == 1:
             results = list(results.values())[0]
         return results
+
+def setup(args):
+    """
+    Create configs and perform basic setups.
+    """
+    cfg = get_cfg()
+    cfg.merge_from_file(args.config_file)
+    cfg.merge_from_list(args.opts)
+    # cfg.freeze()
+    default_setup(cfg, args)
+    return cfg
+
+
+if __name__ == "__main__":
+    data_dir = '/media/tangyp/Data/coco/annotations/'
+    label = '/media/tangyp/Data/coco/annotations/instances_train2014.json'
+    args = default_argument_parser().parse_args()
+    cfg = setup(args)
+    detectron2_model = Detectron2ObjDetModel(project_id='4', cfg=cfg, model_name="Faster_RCNN", num_classes=3, pytorch_model=None)
+    detectron2_model.fit(data_dir=data_dir, label=label)

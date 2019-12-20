@@ -23,7 +23,7 @@ from alcloud.alcloud.utils.detection.engine import evaluate
 from alcloud.alcloud.utils.torch_utils import load_prj_model
 from liuy.LiuyTrainer import  LiuyTrainer
 
-MODEL_NAME = {'Faster_RCNN': '/home/tangyp/detectron2/configs/COCO-Detection/faster_rcnn_R_50_C4_1x.yaml',
+MODEL_NAME = {'Faster_RCNN': '/home/tangyp/liuy/detectron2_origin/configs/COCO-Detection/faster_rcnn_R_50_C4_1x.yaml',
               }
 
 __all__ = ['Detctron2AlObjDetModel',
@@ -264,7 +264,7 @@ if __name__ == "__main__":
     data_dir = '/media/tangyp/Data/coco/annotations/instances_train2014.json'
     data_val_dir = '/media/tangyp/Data/coco/annotations/instances_val2014.json'
     args = default_argument_parser().parse_args()
-    model = Detctron2AlObjDetModel(args=args, project_id='2', model_name='Faster_RCNN', num_classes=80)
+    model = Detctron2AlObjDetModel(args=args, project_id='1', model_name='Faster_RCNN', num_classes=80)
     # model.fit(data_dir)
     proba = model.predict_proba(data_dir=data_val_dir)
     debug = 1

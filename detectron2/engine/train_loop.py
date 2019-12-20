@@ -204,6 +204,7 @@ class SimpleTrainer(TrainerBase):
         If your want to do something with the data, you can wrap the dataloader.
         """
         data = next(self._data_loader_iter)
+        debug = 1
         data_time = time.perf_counter() - start
 
         """

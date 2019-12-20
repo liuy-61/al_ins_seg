@@ -14,9 +14,9 @@ import json
 
 
 _RAW_CITYSCAPES_SPLITS = {
-    "cityscapes_fine_{task}_train": ("cityscapes/leftImg8bit/train", "cityscapes/gtFine/train"),
-    "cityscapes_fine_{task}_val": ("cityscapes/leftImg8bit/val", "cityscapes/gtFine/val"),
-    "cityscapes_fine_{task}_test": ("cityscapes/leftImg8bit/test", "cityscapes/gtFine/test"),
+    "cityscapes_fine2_{task}_train": ("cityscape/leftimage8//leftImg8bit/train", "cityscape/gtFine/train"),
+    "cityscapes_fine2_{task}_val": ("cityscape/leftimage8//leftImg8bit/val", "cityscape/gtFine/val"),
+    "cityscapes_fine2_{task}_test": ("cityscape/leftimage8//leftImg8bit/test", "cityscape/gtFine/test"),
 }
 
 
