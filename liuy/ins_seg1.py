@@ -24,7 +24,7 @@ from alcloud.alcloud.utils.torch_utils import load_prj_model
 from liuy.LiuyTrainer import  LiuyTrainer
 
 MODEL_NAME = {'Faster_RCNN': '/home/tangyp/detectron2/configs/COCO-Detection/faster_rcnn_R_50_C4_1x.yaml',
-              'Mask_RCNN':'/home/tangyp/liuy/detectron2_origin/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_3x.yaml'
+              'Mask_RCNN':'/home/tangyp/liuy/detectron2_origin/configs/Cityscapes/mask_rcnn_R_50_FPN.yaml'
               }
 
 __all__ = ['Detctron2AlObjDetModel',
@@ -79,6 +79,13 @@ class Detctron2AlObjDetModel(BaseDeepModel):
         self.trainer.train()
         self.save_model()
 
+    def test(self,data_dir):
+        self.data_dir = data_dir
+        print("Command Line Args:", args)
+        self.cfg = setup(args, project_id=self.project_id, model_name=self.model_name, num_classes=self.num_classes,
+                         data_dir=data_dir, pre_cfg=self.cfg)
+        self.trainer = LiuyTrainer(self.cfg, self.model)
+        self.trainer.test(self.cfg, self.trainer.model)
 
 
     def predict_proba(self, data_dir, data_names=None, transform=None, batch_size=1,
@@ -98,8 +105,7 @@ class Detctron2AlObjDetModel(BaseDeepModel):
         self.cfg.MODEL.WEIGHTS = os.path.join(self.cfg.OUTPUT_DIR, 'model_final.pth')
         self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST =conf_thres
         predictor = DefaultPredictor(self.cfg)
-        data_loader = LiuyTrainer.build_test_loader(self.cfg, "cityscapes_fine_instance_seg_test")
-        debug = 1
+        data_loader = LiuyTrainer.build_test_loader(self.cfg, "cityscapes_fine2_instance_seg_test")
         results = []
         for batch in data_loader:
             for item in batch:
@@ -132,13 +138,13 @@ class Detctron2AlObjDetModel(BaseDeepModel):
             data_dir=data_dir, data_names=data_names, transform=transform)
         return proba_result
 
-    def test(self, data_dir, label, batch_size, **kwargs):
-        self.model_ft.eval()
-        assert isinstance(label, dict)
-        dataloader = create_faster_rcnn_dataloader(data_dir=data_dir, label_dict=label,
-                                                   augment=False, batch_size=batch_size, shuffle=False)
-        with torch.no_grad():
-            return evaluate(self.model_ft, dataloader, self.device)
+    # def test(self, data_dir, label, batch_size, **kwargs):
+        # self.model_ft.eval()
+        # assert isinstance(label, dict)
+        # dataloader = create_faster_rcnn_dataloader(data_dir=data_dir, label_dict=label,
+        #                                            augment=False, batch_size=batch_size, shuffle=False)
+        # with torch.no_grad():
+        #     return evaluate(self.model_ft, dataloader, self.device)
 
     def save_model(self):
         with open(os.path.join(TRAINED_MODEL_DIR, self._proj_id + '_model.pkl'), 'wb') as f:
@@ -152,6 +158,7 @@ def setup(args,project_id,model_name,num_classes=80, lr=0.00025,data_dir=None,pr
     if data_dir is not None:
         register_all_cityscapes(data_dir)
         pre_cfg.DATASETS.TRAIN = ["cityscapes_fine2_instance_seg_train"]
+        pre_cfg.DATASETS.TEST = ["cityscapes_fine2_instance_seg_val"]
         return pre_cfg
     cfg = get_cfg()
     config_file = MODEL_NAME[model_name]
@@ -169,7 +176,7 @@ def setup(args,project_id,model_name,num_classes=80, lr=0.00025,data_dir=None,pr
 if __name__ == "__main__":
     data_dir = '/media/tangyp/Data'
     args = default_argument_parser().parse_args()
-    model = Detctron2AlObjDetModel(args=args, project_id='3', model_name='Mask_RCNN', num_classes=1)
+    model = Detctron2AlObjDetModel(args=args, project_id='4_cityscapes_miou_metric', model_name='Mask_RCNN', num_classes=1)
     # model.fit(data_dir)
-    proba = model.predict_proba(data_dir=data_dir)
+    model.test(data_dir)
     debug = 1

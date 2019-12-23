@@ -104,10 +104,11 @@ class CityscapesEvaluator(DatasetEvaluator):
         predictionImgList = []
         for gt in groundTruthImgList:
             predictionImgList.append(cityscapes_eval.getPrediction(gt, cityscapes_eval.args))
+        debug = 1
         results = cityscapes_eval.evaluateImgLists(
             predictionImgList, groundTruthImgList, cityscapes_eval.args
         )["averages"]
-        debug = 1
+
 
         ret = OrderedDict()
         ret["segm"] = {"AP": results["allAp"] * 100, "AP50": results["allAp50%"] * 100}

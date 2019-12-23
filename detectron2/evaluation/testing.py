@@ -23,6 +23,9 @@ def print_csv_format(results):
         logger.info("copypaste: " + ",".join([k[0] for k in important_res]))
         logger.info("copypaste: " + ",".join(["{0:.4f}".format(k[1]) for k in important_res]))
 
+def print(results):
+    logger = logging.getLogger(__name__)
+    logger.info("miou {}".format(results['miou']))
 
 def verify_results(cfg, results):
     """

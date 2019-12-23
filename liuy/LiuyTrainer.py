@@ -33,8 +33,8 @@ from detectron2.solver import build_lr_scheduler, build_optimizer
 from detectron2.utils import comm
 from detectron2.utils.events import CommonMetricPrinter, JSONWriter, TensorboardXWriter
 from detectron2.engine import hooks
-
-
+import liuy.liuy_cityscapes_evaluation
+import detectron2
 
 class LiuyTrainer(SimpleTrainer):
     def __init__(self, cfg, model=None):
@@ -231,18 +231,6 @@ class LiuyTrainer(SimpleTrainer):
         """
         return build_detection_test_loader(cfg, dataset_name)
 
-    @classmethod
-    def build_evaluator(cls, cfg, dataset_name):
-        """
-        Returns:
-            DatasetEvaluator
-
-        It is not implemented by default.
-        """
-        raise NotImplementedError(
-            "Please either implement `build_evaluator()` in subclasses, or pass "
-            "your evaluator as arguments to `DefaultTrainer.test()`."
-        )
 
     @classmethod
     def test(cls, cfg, model, evaluators=None):
@@ -258,6 +246,7 @@ class LiuyTrainer(SimpleTrainer):
             dict: a dict of result metrics
         """
         logger = logging.getLogger(__name__)
+        logger.info("test")
         if isinstance(evaluators, DatasetEvaluator):
             evaluators = [evaluators]
         if evaluators is not None:
@@ -291,8 +280,8 @@ class LiuyTrainer(SimpleTrainer):
                     results_i
                 )
                 logger.info("Evaluation results for {} in csv format:".format(dataset_name))
-                print_csv_format(results_i)
-
+                # logger.info("MIOU{}:".format(results_i['miou']))
+                print(results_i)
         if len(results) == 1:
             results = list(results.values())[0]
         return results
@@ -327,7 +316,9 @@ class LiuyTrainer(SimpleTrainer):
             assert (
                     torch.cuda.device_count() >= comm.get_rank()
             ), "CityscapesEvaluator currently do not work with multiple machines."
-            return CityscapesEvaluator(dataset_name)
+            # return detectron2.evaluation.cityscapes_evaluation.CityscapesEvaluator (dataset_name)
+            return liuy.liuy_cityscapes_evaluation.CityscapesEvaluator(dataset_name)
+
         if evaluator_type == "pascal_voc":
             return PascalVOCDetectionEvaluator(dataset_name)
         if evaluator_type == "lvis":

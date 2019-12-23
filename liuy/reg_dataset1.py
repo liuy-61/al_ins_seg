@@ -14,13 +14,14 @@ import json
 
 
 _RAW_CITYSCAPES_SPLITS = {
-    "cityscapes_fine2_{task}_train": ("cityscape/leftimage8//leftImg8bit/train", "cityscape/gtFine/train"),
-    "cityscapes_fine2_{task}_val": ("cityscape/leftimage8//leftImg8bit/val", "cityscape/gtFine/val"),
-    "cityscapes_fine2_{task}_test": ("cityscape/leftimage8//leftImg8bit/test", "cityscape/gtFine/test"),
+    "cityscapes_fine2_{task}_train": ("cityscape/leftImg8bit/train", "cityscape/gtFine/train"),
+    "cityscapes_fine2_{task}_val": ("cityscape/leftImg8bit/val", "cityscape/gtFine/val"),
+    "cityscapes_fine2_{task}_test": ("cityscape/leftImg8bit/test", "cityscape/gtFine/test"),
+    "cityscapes_fine2_{task}_sub_train": ("cityscape/leftImg8bit/sub_train", "cityscape/gtFine/sub_train"),
 }
 
 
-def register_all_cityscapes(root="datasets"):
+def register_all_cityscapes(root):
     for key, (image_dir, gt_dir) in _RAW_CITYSCAPES_SPLITS.items():
         meta = _get_builtin_metadata("cityscapes")
         image_dir = os.path.join(root, image_dir)
