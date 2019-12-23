@@ -1,56 +1,103 @@
-<img src=".github/Detectron2-Logo-Horz.svg" width="300" >
+detectron2的配置参考的detectron2
+## 数据集结构 
+数据集使用citysacpes
 
-Detectron2 is Facebook AI Research's next generation software system
-that implements state-of-the-art object detection algorithms.
-It is a ground-up rewrite of the previous version,
-[Detectron](https://github.com/facebookresearch/Detectron/),
-and it originates from [maskrcnn-benchmark](https://github.com/facebookresearch/maskrcnn-benchmark/).
+data_dir  /cityscapes
+                         /leftImg8bit
 
-<div align="center">
-  <img src="https://user-images.githubusercontent.com/1381301/66535560-d3422200-eace-11e9-9123-5535d469db19.png"/>
-</div>
+                                     /train
 
-### What's New
-* It is powered by the [PyTorch](https://pytorch.org) deep learning framework.
-* Includes more features such as panoptic segmentation, densepose, Cascade R-CNN, rotated bounding boxes, etc.
-* Can be used as a library to support [different projects](projects/) on top of it.
-  We'll open source more research projects in this way.
-* It [trains much faster](https://detectron2.readthedocs.io/notes/benchmarks.html).
+                                     /val
 
-See our [blog post](https://ai.facebook.com/blog/-detectron2-a-pytorch-based-modular-object-detection-library-/)
-to see more demos and learn about detectron2.
+                                     /test
 
-## Installation
+                                     /sub_train
 
-See [INSTALL.md](INSTALL.md).
+                         /gtfine
 
-## Quick Start
+                                     /val
 
-See [GETTING_STARTED.md](GETTING_STARTED.md),
-or the [Colab Notebook](https://colab.research.google.com/drive/16jcaJoc6bCFAQ96jDe2HwtXj7BMD_-m5).
+                                     /train
 
-Learn more at our [documentation](https://detectron2.readthedocs.org).
-And see [projects/](projects/) for some projects that are built on top of detectron2.
+                                     /val
 
-## Model Zoo and Baselines
+                                     /test
 
-We provide a large set of baseline results and trained models available for download in the [Detectron2 Model Zoo](MODEL_ZOO.md).
+                                     /sub_train
+                                     
+
+data_dir  是自定义的路径  其他文件夹必须按照以上结构布置
+
+ins_seg2.py 的使用
+
+利用完整train 数据集 得到baseline
+if __name__ == "__main__":
+    data_dir = '######'   
+    args = default_argument_parser().parse_args()
+    
+   （ 这里命令行输入配置文件参数 
+    --config-file
+    detectron2_origin/configs/Cityscapes/mask_rcnn_R_50_FPN.yaml）
+    
+    model = InsSegModel(args=args, project_id='train_on_complte_data', data_dir=data_dir)
+    初始化模型
+	
+    model.fit()
+    在train数据集上训练 得到baseline
+	
+     model.test()
+    使用miou指标测试模型
+    
+	
+在是用主动学算法 挑选出数据集 sub_train 之后 在sub_train上训练 并测试
+  
+   if __name__ == "__main__":
+    data_dir = '######'   
+    args = default_argument_parser().parse_args()
+    
+   （ 这里命令行输入配置文件参数 
+    --config-file
+    detectron2_origin/configs/Cityscapes/mask_rcnn_R_50_FPN.yaml）
+    
+    model = InsSegModel(args=args, project_id='train_on_sub_data', data_dir=data_dir)
+    初始化模型
+	
+    model.fit_on_subset()
+    在train数据集上训练 得到baseline
+	
+     model.test()
+    使用miou指标测试模型
+    
+    
+   主动学习算法的接口 
+   
+   class BaseDataSlection(metaclass=ABCMeta):
+    """Base data selection . The data selection object must inherit form this class."""
+
+    def __init__(self, source_data_dir, target_data_dir, **kwargs):
+        """
+        :param source_data_dir: the root of the datasetto be selected
+        :param target_data_dir: the root of the datasetto has been selected
+        """
+        self.source_data_dir = source_data_dir
+        self.target_data_dir = target_data_dir
+
+    @abstractmethod
+    def select(self, threshold, **kwargs):
+        """select the data from source_data_dir and save to target_data_dir .
+
+        """
+  
 
 
-## License
 
-Detectron2 is released under the [Apache 2.0 license](LICENSE).
 
-## Citing Detectron
 
-If you use Detectron2 in your research or wish to refer to the baseline results published in the [Model Zoo](MODEL_ZOO.md), please use the following BibTeX entry.
 
-```BibTeX
-@misc{wu2019detectron2,
-  author =       {Yuxin Wu and Alexander Kirillov and Francisco Massa and
-                  Wan-Yen Lo and Ross Girshick},
-  title =        {Detectron2},
-  howpublished = {\url{https://github.com/facebookresearch/detectron2}},
-  year =         {2019}
-}
-```
+
+
+
+
+
+
+
