@@ -1,17 +1,29 @@
 
-## 数据集结构 
+##数据集结构 
+
 
 data_dir  /cityscapes
+
 			/leftImg8bit
+			
 				/train
+				
 				/val
+				
 			        /test
-                                /sub_train           		
+				
+                                /sub_train           
+				
  			/gtfine                        
+			
 				/train
+				
 				/val
+				
 			        /test
+				
                                 /sub_train     
+				
 				
 data_dir  是自定义的路径  文件夹必须按照以上结构布置
 
