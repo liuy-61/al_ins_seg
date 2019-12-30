@@ -165,8 +165,7 @@ if __name__ == "__main__":
     args = default_argument_parser().parse_args()
     model = InsSegModel(args=args, project_id='baseline', data_dir=data_dir)
     model.fit()
-    # model.fit_on_subset()
-    # losses = model.compute_loss(image_dir=image_dir,gt_dir=gt_dir)
+    losses = model.compute_loss(image_dir=image_dir,gt_dir=gt_dir)
     # probability = model.predict_probability(image_dir, gt_dir)
     model.test()
     # debug = 1

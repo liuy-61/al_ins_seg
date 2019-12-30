@@ -60,6 +60,12 @@ class InsSegModel(BaseInsSegModel):
 
 
     def compute_loss(self, image_dir, gt_dir):
+        """
+
+        :param image_dir:
+        :param gt_dir:
+        :return: list of dict, a dict includes file_name（as a key to the data) and losses
+        """
         register_a_cityscapes(image_dir, gt_dir, 'dataset_name')
         self.cfg.DATASETS.TRAIN = ["dataset_name"]
         computer = LiuyComputeLoss(self.cfg, self.model)
@@ -69,13 +75,7 @@ class InsSegModel(BaseInsSegModel):
     def predict_proba(self, image_dir, gt_dir, conf_thres=0.7, nms_thres=0.4,
                       verbose=True, **kwargs):
         """
-                   During inference, the model requires only the input tensors, and returns the post-processed
-                   predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
-                   follows:
-                       - boxes (Tensor[N, 4]): the predicted boxes in [x0, y0, x1, y1] format, with values between
-                         0 and H and 0 and W
-                       - labels (Tensor[N]): the predicted labels for each image
-                       - scores (Tensor[N]): the scores or each prediction
+                :return: list of dict, a dict includes file_name（as a key to the data) and predictions
         """
         self.cfg.MODEL.WEIGHTS = os.path.join(self.cfg.OUTPUT_DIR, 'model_final.pth')
         self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = conf_thres
@@ -142,15 +142,15 @@ def setup(args,project_id,data_dir=None):
 
 
 if __name__ == "__main__":
-    image_dir = '/media/tangyp/Data/cityscape/leftImg8bit/train'
-    gt_dir = '/media/tangyp/Data/cityscape/gtFine/train'
+    image_dir = '/media/tangyp/Data/cityscape/leftImg8bit/sub_train'
+    gt_dir = '/media/tangyp/Data/cityscape/gtFine/sub_train'
     data_dir = '/media/tangyp/Data'
     args = default_argument_parser().parse_args()
     model = InsSegModel(args=args, project_id='_baseline', data_dir=data_dir)
-    model.fit()
+    # model.fit()
     # model.fit_on_subset()
-    # losses = model.compute_loss(image_dir=image_dir,gt_dir=gt_dir)
+    losses = model.compute_loss(image_dir=image_dir,gt_dir=gt_dir)
     # probability = model.predict_probability(image_dir, gt_dir)
     # model.test()
-    # debug = 1
+    debug = 1
 

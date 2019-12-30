@@ -8,8 +8,7 @@ class BaseAl(metaclass=ABCMeta):
 
         :param seg_model:  model used to score the samplers.  Expects fit and predict
         methods to be implemented.
-        :param sampler: sampling class from sampling_methods, assumes reference
-        passed in and sampler not yet instantiated.
+        :param sampler:
         :param kwargs:
         """
         self.seg_model = seg_model

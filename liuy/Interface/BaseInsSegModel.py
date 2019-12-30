@@ -31,7 +31,7 @@ class BaseInsSegModel(metaclass=ABCMeta):
         :param data_dir: str
             The path to the data folder.
 
-        :param kwargs: dict
+        :param kwargs: list of dict
             Other necessary params.
         """
 
@@ -45,7 +45,8 @@ class BaseInsSegModel(metaclass=ABCMeta):
 
     @abstractmethod
     def test(self, data_dir, label, batch_size:'int', **kwargs):
-        """tets the model.
+        """test the model.
+            return the  miou
         """
 
     @abstractmethod
