@@ -2,14 +2,14 @@
 为方便同学们实现样本选择策略，我们设计了以下模块,
 同学们不用关注于数据的加载，模型的训练和预测，评估等等细节,
 只需要关注于如何实现样本选择策略。在按照给定的接口实现自定义的采样器之后,
-利用liuy /imlementation/ Almodel.py文件就可以对自定义的采样器进行评估。
+利用liuy /imlementation/ Almodel.py文件就可以对自定义的采样器进行评估<br>
 以下文档会先介绍如何运行一个实例，liuy/implementation/Almodel.py <br>
 再介绍采样器接口，以及在实现采样器接口需要注意的细节<br>
 然后介绍了提供的方法（在实现样本选择策略的时候或许要用到），分割模型中计算损失和预测方法<br>
   
 # 实例运行
-文件中我们可以运行liuy/implementation/Almodel.py 文件，该实例中使用了随机采样器，分割模型在训练集中先抽取20%(seed_batch设为0.2)的数据进行训练，作为模型的初始化，随后利用随机采样器在训练集中每次抽取20%（batch_sise设为0.2）的数据样本，直到样本全都选择完。
-在采样器每次采样之后，分割模型再利用采样数据进行训练，并进行评估（评估指标为miou）,记录下每次评估结果。<br>
+文件中我们可以运行liuy/implementation/Almodel.py 文件，该实例中使用了随机采样器，分割模型在训练集中先抽取20%(seed_batch设为0.2)的数据进行训练，作为模型的初始化，随后利用随机采样器在训练集中每次抽取20%（batch_sise设为0.2）的数据样本，直到样本全都选择完，
+在采样器每次采样之后，分割模型再利用采样数据进行训练，并进行评估（评估指标为miou）,记录下每次评估结果<br>
 在运行实例之前，首先需要配置cityscapes数据集<br>
 
 ## 数据集配置路径
@@ -76,7 +76,7 @@ generate_one_curve(    image_dir=image_dir,
                        seed_batch=0.2
                        )
 ```
-该函数 ： 先随机从训练集抽取百分之二十的样本（ seed_size=0.2）作为训练样本，用于实例分割模型（seg_model）的初始训练，之后利用采样器randomsampler每一次从训练集中抽取百分之二十的训练样本（ batch_size=0.2），在每一次采样器采取到一个bactch_size的样本，将样本加入训练样本之后，分割模型用新的训练样本进行训练，再对本轮训练好的分割模型进行评估，并保存评估结果。直到训练集中所有的样本都被采样完。有任意一次评估结果优于baseline则说明采样器有效。seed_size和batch_size参数可以调动。
+先随机从训练集抽取百分之二十的样本（ seed_size=0.2）作为训练样本，用于实例分割模型（seg_model）的初始训练，之后利用采样器randomsampler每一次从训练集中抽取百分之二十的训练样本（ batch_size=0.2），在每一次采样器采取到一个bactch_size的样本，将样本加入训练样本之后，分割模型用新的训练样本进行训练，再对本轮训练好的分割模型进行评估，并保存评估结果。直到训练集中所有的样本都被采样完。有任意一次评估结果优于baseline则说明采样器有效。seed_size和batch_size参数可以调动。
 
 # 如何实现采样器接口
 
@@ -120,10 +120,7 @@ class BaseSampler(metaclass=ABCMeta):
         return
 ```
 
-BaseSampler在传入sampler_name、data_loader参数初始化之后，会得到 self.image_files_list，
-self.image_files_list中的元素'file_name'为cityscapes数据集中一张图像数据的唯一标志，是一张图片的全路径。
-在初始化BaseSampler后，self.image_files_list。包含了训练集中所有的图像数据。
-BaseSampler接口的实现可以可以参考RandomSampler。<br>
+BaseSampler在传入sampler_name、data_loader参数初始化之后，会得到 self.image_files_list，self.image_files_list中的元素'file_name'cityscapes数据集中一张图像数据的唯一标志，是一张图片的全路径。在初始化BaseSampler后，self.image_files_list。包含了训练集中所有的图像数据。BaseSampler接口的实现可以可以参考RandomSampler。<br>
 
 ## 随机采样器
 ```
