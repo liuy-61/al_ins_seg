@@ -188,11 +188,11 @@ if __name__ == "__main__":
 3、命令行设置分割模型的配置文件
 ```
 --config-file
-detectron2_origin/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_3x.yaml
+configs/Cityscapes/mask_rcnn_R_50_FPN.yaml
 ```
-4、如果分割模型之前已经训练完毕 则model.fit()可以注释掉
+4、如果分割模型之前已经训练完毕 则model.fit()可以注释掉<br>
 运行以上代码，调用compute_loss后<br>
-返回值为一个list，元素为一个字典,字典元素如下所示<br>
+返回值为一个list，list元素为字典,字典元素如下所示<br>
 <class 'dict'>: <br>
 {'loss_cls': tensor(102.9732, device='cuda:0'), <br>
 'loss_box_reg': tensor(130.7693, device='cuda:0'),<br>
@@ -224,11 +224,11 @@ if __name__ == "__main__":
 3、命令行设置分割模型的配置文件<br>
 ```
 --config-file
-detectron2_origin/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_3x.yaml
+configs/Cityscapes/mask_rcnn_R_50_FPN.yaml
 ```
 4、如果分割模型之前已经训练完毕 则model.fit()可以注释掉<br>
 按以上要求运行该文件，调用predict_proba之后，
-返回值为一个list list元素为一个字典，字典元素如下所示<br>
+返回值为一个list，list元素为字典，字典元素如下所示<br>
 
 {'file_name': '/media/tangyp/Data/cityscape/leftImg8bit/sub_train/aachen/aachen_000000_000019_leftImg8bit.png',<br>
 'boxes': Boxes(tensor([[1830.1968,  433.6077, 1889.0730,  548.3942],<br>
