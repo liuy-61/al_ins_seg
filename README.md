@@ -218,7 +218,7 @@ if __name__ == "__main__":
 在实例分割模型中 提供了def predict_proba(self, image_dir, gt_dir, conf_thres=0.7, nms_thres=0.4,
                       verbose=True, **kwargs):<br>
                       
-运行以上liuy/implementation/InsSegModel.py文件
+运行以上liuy/implementation/InsSegModel.py文件<br>
 1、data_dir 为cityscapes数据集的父级目录<br>
 2、image_dir 为预测的image的路径   gt_dir为对应的label路径<br>
 3、命令行设置分割模型的配置文件<br>
@@ -230,7 +230,6 @@ detectron2_origin/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_3x.yaml
 按以上要求运行该文件，调用predict_proba之后，
 返回值为一个list list元素为一个字典，字典元素如下所示<br>
 
-<class 'dict'>:  <br>
 {'file_name': '/media/tangyp/Data/cityscape/leftImg8bit/sub_train/aachen/aachen_000000_000019_leftImg8bit.png',<br>
 'boxes': Boxes(tensor([[1830.1968,  433.6077, 1889.0730,  548.3942],<br>
         [ 890.5734,  446.4362,  912.8923,  498.7133],<br>
