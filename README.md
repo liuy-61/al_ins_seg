@@ -82,10 +82,10 @@ randomsampler每一次从训练集中抽取百分之二十的训练样本（ bat
 训练样本之后，分割模型用新的训练样本进行训练，再对本轮训练好的分割模型进行评估，并保存评估结果。直到训练集中所有的样本都被采样完。有任意<br>
 一次评估结果优于baseline则说明采样器有效。seed_size和batch_size参数可以调动。<br>
 
-＃ 如何实现采样器接口
+# 如何实现采样器接口
 
 我们最重要的就是实现样本选择策略即实现采样器接口,<br>
-实现liuy /Interface/ BaseSampler自定义采样器之后，替换掉liuy /implementation/ Almodel.py中的随机采样器<BR>
+实现liuy /Interface/ BaseSampler自定义采样器之后，替换掉liuy /implementation/ Almodel.py中的随机采样器<br>
 
 ```
 randomsampler = RandomSampler('randomsampler', data_loader) 
@@ -124,11 +124,10 @@ class BaseSampler(metaclass=ABCMeta):
         return
 ```
 
-BaseSampler在传入sampler_name、data_loader,初始化之后 会得到 self.image_files_list<br>
- self.image_files_list中的元素'file_name'为cityscapes数据集中一张图像数据的唯一标志，是一张图片的全路径,在初始化BaseSampler后，<br>
- self.image_files_list。包含了训练集中所有的图像数据。<br>
-我们要做的是在自定义的sampler中的select_batch（）函数中从 self.image_files_list中按照样本选择策略挑出 self.image_files_list的子集<br>
-具体实现可以参考RandomSampler<br>
+BaseSampler在传入sampler_name、data_loader参数初始化之后，会得到 self.image_files_list，<br>
+self.image_files_list中的元素'file_name'为cityscapes数据集中一张图像数据的唯一标志，是一张图片的全路径。<br>
+在初始化BaseSampler后，self.image_files_list。包含了训练集中所有的图像数据。<br>
+BaseSampler接口的实现可以可以参考RandomSampler。<br>
 
 ## 随机采样器
 ```
@@ -153,10 +152,11 @@ class RandomSampler(BaseSampler):
         return samples
 
 ```
+初始化函数没有扩展<br>
 select_batch函数的参数含义:<br>
-n_sample为每个batch 选择的样本个数对应于前面的batch_size<br>
-already_selected 为之前已经选择过的样本， already_selected也是一个list,可以将already_selected看作 self.image_files_list的子集<br>
-select_batch函数挑选样本时 应该在 self.image_files_list挑选出与already_selected互斥的一个子集，并返回它。<br>
+n_sample为每个batch 选择的样本个数<br>
+already_selected 为之前已经选择过的样本，already_selected也是一个list,可以将already_selected看作self.image_files_list的子集<br>
+select_batch函数挑选样本时,应该在self.image_files_list挑选出与already_selected互斥的一个子集，并返回它。<br>
 
 
 # 代码目录（主要用到的）
