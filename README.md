@@ -24,7 +24,7 @@
 >>>val<br>
 >>>test<br>
 
-数据集的路径需按以上格式配置，如训练集的image_dir 为**/cityscapes/leftImg8bit/train  gt_dir 为**/cityscapes/gtfine/train
+数据集的路径需按以上格式配置，如训练集的image_dir 为**/cityscapes/leftImg8bit/train     gt_dir 为**/cityscapes/gtfine/train
 
 ## 按实际情况修改liuy/implementation/Almodel.py 中的变量或参数
 源码为 ：<br>
@@ -152,12 +152,7 @@ already_selected 为之前已经选择过的样本，already_selected也是一�
 select_batch函数挑选样本时,应该在self.image_files_list挑选出与already_selected互斥的一个子集，并返回它。<br>
 
 
-# 代码目录（主要用到的）
->detectron2_origin
->>liuy
->>>implementation<br>
->>>interface<br>
->>>utils
+
 
 # 提供的方法
 ## 计算损失
