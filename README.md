@@ -1,5 +1,8 @@
 # 前言
-为方便同学们实现样本选择策略，我们设计了以下模块，同学们不用关注于数据的加载，模型的训练和预测，评估等等细节，只需要关注于如何实现样本选择策略。在按照给定的接口实现自定义的采样器之后，利用位于liuy/implementation/Almodel.py 就可以对自定义的采样器进行评估<BR>
+为方便同学们实现样本选择策略，我们设计了以下模块，同学们不用关注于数据的加载，模型的训练和预测，评估等等细节，只需要关注于如何实现样本选择策略。在按照给定的接口实现自定义的采样器之后，利用位于liuy /实施/ Almodel.py就可以对自定义的采样器进行评估< BR >
+以下文档会先介绍如何运行一个实例，liuy/implementation/Almodel.py <br>
+再介绍采样器接口，以及在实现样本选择策略即实现采样器接口需要注意的细节。<br>
+然后介绍了提供的方法（同学在实现样本选择策略的时候或许需要用到），分割模型中计算损失和预测方法。 <br>
   
 # 实例运行
 文件中我们可以运行liuy/implementation/Almodel.py 文件，其中使用了随机采样器，分割模型在训练集中先抽取20%(seed_batch设为0.2)的数据进行训练，作为模型的初始化。<br>
@@ -18,7 +21,8 @@
 >>gtfine
 >>>train<br>
 >>>val<br>
->>>test
+>>>test<br>
+
 数据集的路径需按以上格式配置，如训练集的image_dir 为**/cityscapes/leftImg8bit/train gt_dir 为**/cityscapes/gtfine/train
 
 ## 按实际情况修改liuy/implementation/Almodel.py 中的变量或参数
@@ -174,9 +178,15 @@ if __name__ == "__main__":
 detectron2_origin/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_3x.yaml
 ```
 4、如果分割模型之前已经训练完毕 则model.fit()可以注释掉
-运行以上代码会发现<br>
-返回值为一个list，元素为一个字典，字典包含了图像的file_name 和loss_cls，loss_box_reg，loss_mask，loss_rpn_cls，loss_rpn_loc<br>
-
+运行以上代码，调用compute_loss后<br>
+返回值为一个list，元素为一个字典,字典元素如下所示<br>
+<class 'dict'>: <br>
+{'loss_cls': tensor(102.9732, device='cuda:0'), <br>
+'loss_box_reg': tensor(130.7693, device='cuda:0'),<br>
+'loss_mask': tensor(11.4862, device='cuda:0'), <br>
+'loss_rpn_cls': tensor(59.3035, device='cuda:0'), <br>
+'loss_rpn_loc': tensor(1.9601, device='cuda:0'), <br>
+'file_name': '/media/tangyp/Data/cityscape/leftImg8bit/sub_train/aachen/aachen_000002_000019_leftImg8bit.png'}<br>
 
 
 ## 模型预测
@@ -189,11 +199,10 @@ if __name__ == "__main__":
     args = default_argument_parser().parse_args()
     model = InsSegModel(args=args, project_id='1', data_dir=data_dir)
     model.fit()
-    probability = model.predict_probability(image_dir, gt_dir)
+    probability = model.predict_proba(image_dir, gt_dir)
 ```
 
-
-在实例分割模型中 提供了def predict_probability(self, image_dir, gt_dir, conf_thres=0.7, nms_thres=0.4,
+在实例分割模型中 提供了def predict_proba(self, image_dir, gt_dir, conf_thres=0.7, nms_thres=0.4,
                       verbose=True, **kwargs):<br>
                       
 运行以上liuy/implementation/InsSegModel.py文件
@@ -205,7 +214,16 @@ if __name__ == "__main__":
 detectron2_origin/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_3x.yaml
 ```
 4、如果分割模型之前已经训练完毕 则model.fit()可以注释掉<br>
-返回值为一个list list元素为一个字典，字典包含了预测图像的file_name，boxes坐标，instances类别，instances分数
+按以上要求运行该文件，调用predict_proba之后，
+返回值为一个list list元素为一个字典，字典元素如下所示<br>
+
+<class 'dict'>: <br>
+{'file_name': '/media/tangyp/Data/cityscape/leftImg8bit/sub_train/aachen/aachen_000000_000019_leftImg8bit.png',<br>
+'boxes': Boxes(tensor([[1830.1968,  433.6077, 1889.0730,  548.3942],<br>
+        [ 890.5734,  446.4362,  912.8923,  498.7133],<br>
+        [ 914.9539,  440.7620,  938.4851,  496.9281]], device='cuda:0')), <br>
+        'labels': tensor([0, 0, 0], device='cuda:0'), <br>
+        'scores': tensor([0.9377, 0.8424, 0.7417],device='cuda:0')}<br>
        
 
 
