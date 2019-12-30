@@ -12,7 +12,7 @@
 在采样器每次采样之后，分割模型再利用采样数据进行训练，并进行评估（评估指标为miou）,记录下每次评估结果<br>
 在运行实例之前，首先需要配置cityscapes数据集<br>
 
-## step1:config dataset structure
+## step1:config datasets structure
 >cityscapes
 >>leftImg8bit
 >>>train<br>
@@ -155,7 +155,7 @@ customsampler = CustomSampler('customsampler', data_loader)
 CustomSampler 为自定义的采样器<br>
 然后运行AlModel.py
 
-# functionss provided
+# functions provided
 ## compute_loss()
 在liuy/implementation/InsSegModel.py中<br>
 ```
