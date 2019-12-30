@@ -34,6 +34,7 @@ from detectron2.utils import comm
 from detectron2.utils.events import CommonMetricPrinter, JSONWriter, TensorboardXWriter
 from detectron2.engine import hooks
 import liuy.liuy_cityscapes_evaluation
+from liuy.Liuy_loss import LiuyTensorboardXWriter
 import detectron2
 
 class LiuyTrainer(SimpleTrainer):

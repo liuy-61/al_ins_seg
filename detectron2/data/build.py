@@ -402,7 +402,6 @@ def build_detection_test_loader(cfg, dataset_name, mapper=None):
     if mapper is None:
         mapper = DatasetMapper(cfg, False)
     dataset = MapDataset(dataset, mapper)
-
     sampler = samplers.InferenceSampler(len(dataset))
     # Always use 1 image per worker during inference since this is the
     # standard when reporting inference time in papers.

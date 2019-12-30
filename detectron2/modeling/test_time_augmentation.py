@@ -69,7 +69,7 @@ class DatasetMapperTTA:
 class GeneralizedRCNNWithTTA(nn.Module):
     """
     A GeneralizedRCNN with test-time augmentation enabled.
-    Its :meth:`__call__` method has the same interface as :meth:`GeneralizedRCNN.forward`.
+    Its :meth:`__call__` method has the same Interface as :meth:`GeneralizedRCNN.forward`.
     """
 
     def __init__(self, cfg, model, tta_mapper=None, batch_size=3):

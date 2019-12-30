@@ -269,3 +269,6 @@ class SimpleTrainer(TrainerBase):
             self.storage.put_scalar("total_loss", total_losses_reduced)
             if len(metrics_dict) > 1:
                 self.storage.put_scalars(**metrics_dict)
+
+
+

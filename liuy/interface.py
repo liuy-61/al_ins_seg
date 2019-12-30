@@ -1,8 +1,8 @@
 
 from abc import ABCMeta, abstractmethod
 
-class BaseDeepModel(metaclass=ABCMeta):
-    """Base deep model. The model object must inherit form this class."""
+class BaseInsSegModel(metaclass=ABCMeta):
+    """Base  model. The model object must inherit form this class."""
 
     def __init__(self, project_id, data_dir, **kwargs):
         """
@@ -53,21 +53,37 @@ class BaseDeepModel(metaclass=ABCMeta):
     def save_model(self):
         """Save the model after using (distributed system)."""
 
-class BaseDataSlection(metaclass=ABCMeta):
-    """Base data selection . The data selection object must inherit form this class."""
+class BaseSampler(metaclass=ABCMeta):
+    def __init__(self, data_loader, **kwargs):
+        self.data_loader = data_loader
 
-    def __init__(self, source_data_dir, target_data_dir, **kwargs):
+    def select_batch(self, N, already_selct, **kwargs):
         """
-        :param source_data_dir: the root of the datasetto be selected
-        :param target_data_dir: the root of the datasetto has been selected
-        """
-        self.source_data_dir = source_data_dir
-        self.target_data_dir = target_data_dir
 
-    @abstractmethod
-    def select(self, threshold, **kwargs):
-        """select the data from source_data_dir and save to target_data_dir .
-
+        :param N: batch size
+        :param already_selct: index of datapoints already selected
+        :param kwargs:
+        :return: index of  points selected
         """
+        return
+
+class BaseAl(metaclass=ABCMeta):
+    def __init__(self, seg_model, sampler, **kwargs):
+        """
+
+        :param seg_model:  model used to score the samplers.  Expects fit and predict
+        methods to be implemented.
+        :param sampler: sampling class from sampling_methods, assumes reference
+        passed in and sampler not yet instantiated.
+        :param kwargs:
+        """
+        self.seg_model = seg_model
+        self.sampler = sampler
+
+    def select_batch(self, N, already_selected,
+                     **kwargs):
+        pass
+
+
 
 

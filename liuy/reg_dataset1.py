@@ -46,6 +46,18 @@ def register_all_cityscapes(root):
             image_dir=image_dir, gt_dir=gt_dir, evaluator_type="sem_seg", **meta
         )
 
+def register_a_cityscapes(image_dir, gt_dir, dataset_name):
+    meta = _get_builtin_metadata("cityscapes")
+    DatasetCatalog.register(
+        dataset_name,
+        lambda x=image_dir, y=gt_dir: load_cityscapes_instances(
+            x, y, from_json=True, to_polygons=True
+        ),
+    )
+    MetadataCatalog.get(dataset_name).set(
+        image_dir=image_dir, gt_dir=gt_dir, evaluator_type="cityscapes", **meta
+    )
+
 def get_custom_dicts(data_dir):
     if 'train' in data_dir:
         file_path = '/media/tangyp/Data/coco/train2014'

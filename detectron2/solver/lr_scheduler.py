@@ -4,7 +4,7 @@ from bisect import bisect_right
 from typing import List
 import torch
 
-# NOTE: PyTorch's LR scheduler interface uses names that assume the LR changes
+# NOTE: PyTorch's LR scheduler Interface uses names that assume the LR changes
 # only on epoch boundaries. We typically use iteration based schedules instead.
 # As a result, "epoch" (e.g., as in self.last_epoch) should be understood to mean
 # "iteration" instead.
@@ -45,7 +45,7 @@ class WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
         ]
 
     def _compute_values(self) -> List[float]:
-        # The new interface
+        # The new Interface
         return self.get_lr()
 
 
@@ -83,7 +83,7 @@ class WarmupCosineLR(torch.optim.lr_scheduler._LRScheduler):
         ]
 
     def _compute_values(self) -> List[float]:
-        # The new interface
+        # The new Interface
         return self.get_lr()
 
 
