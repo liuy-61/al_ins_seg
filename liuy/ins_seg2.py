@@ -18,8 +18,6 @@ from detectron2.modeling import GeneralizedRCNNWithTTA
 from detectron2.utils import comm
 from liuy.reg_dataset1 import get_custom_dicts,register_all_cityscapes
 from detectron2.engine.defaults import DefaultTrainer
-from alcloud.alcloud.utils.data_manipulate import create_img_dataloader, create_faster_rcnn_dataloader
-from alcloud.alcloud.utils.detection.engine import evaluate
 from alcloud.alcloud.utils.torch_utils import load_prj_model
 from liuy.LiuyTrainer import  LiuyTrainer
 from liuy.Liuy_loss import LiuyTensorboardXWriter
@@ -165,7 +163,7 @@ if __name__ == "__main__":
     args = default_argument_parser().parse_args()
     model = InsSegModel(args=args, project_id='baseline', data_dir=data_dir)
     model.fit()
-    losses = model.compute_loss(image_dir=image_dir,gt_dir=gt_dir)
+    # losses = model.compute_loss(image_dir=image_dir,gt_dir=gt_dir)
     # probability = model.predict_probability(image_dir, gt_dir)
     model.test()
     # debug = 1

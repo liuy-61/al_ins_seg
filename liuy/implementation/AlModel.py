@@ -26,11 +26,14 @@ from liuy.utils.reg_dataset import register_a_cityscapes_from_selected_image_fil
 #         kwargs['n_sample'] = n_sample
 #         kwargs['already_selected'] = already_selected
 #         return self.sampler.select_batch(**kwargs)
-def generate_one_curve(data_loader,
+def generate_one_curve(
+                       image_dir,
+                       gt_dir,
+                       data_loader,
                        sampler,
                        ins_seg_model,
                        seed_batch,
-                       batch_size,
+                       batch_size
                        ):
     """
     
@@ -76,8 +79,8 @@ def generate_one_curve(data_loader,
     # initally, seed_batch pieces of image were selected randomly
     seleted_image_files = random.sample(image_files_list, seed_batch)
 
-    register_a_cityscapes_from_selected_image_files(image_dir='/media/tangyp/Data/cityscape/leftImg8bit/train',
-                                                    gt_dir='/media/tangyp/Data/cityscape/gtFine/train',
+    register_a_cityscapes_from_selected_image_files(image_dir=image_dir,
+                                                    gt_dir=gt_dir,
                                                     selected_image_files=seleted_image_files,
                                                     dataset_name='dataset_from_seleted_iamge_files'
                                                     )
@@ -115,10 +118,12 @@ if __name__ == "__main__":
     gt_dir = '/media/tangyp/Data/cityscape/gtFine/train'
     data_dir = '/media/tangyp/Data'
     args = default_argument_parser().parse_args()
-    seg_model = InsSegModel(args=args, project_id='debug', data_dir=data_dir)
+    seg_model = InsSegModel(args=args, project_id='AlModel', data_dir=data_dir)
     data_loader = seg_model.trainer.data_loader
     randomsampler = RandomSampler('randomsampler', data_loader)
-    generate_one_curve(data_loader,
+    generate_one_curve(image_dir=image_dir,
+                       gt_dir=gt_dir,
+                       data_loader=data_loader,
                        sampler=randomsampler,
                        ins_seg_model=seg_model,
                        batch_size=0.2,

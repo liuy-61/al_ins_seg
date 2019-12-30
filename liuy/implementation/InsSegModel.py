@@ -46,7 +46,7 @@ class InsSegModel(BaseInsSegModel):
     def fit_on_subset(self, data_loader):
         self.trainer.resume_or_load(resume=self.args.resume)
         self.trainer.data_loader = data_loader
-        # self.trainer.train()
+        self.trainer.train()
         self.save_model()
 
     def test(self):
@@ -149,8 +149,12 @@ if __name__ == "__main__":
     model = InsSegModel(args=args, project_id='_baseline', data_dir=data_dir)
     # model.fit()
     # model.fit_on_subset()
-    losses = model.compute_loss(image_dir=image_dir,gt_dir=gt_dir)
-    # probability = model.predict_probability(image_dir, gt_dir)
+    # losses = model.compute_loss(image_dir=image_dir,gt_dir=gt_dir)
+    # for loss in losses:
+    #     print(loss)
+    probability = model.predict_proba(image_dir, gt_dir)
+    for prob in probability:
+        print(prob)
     # model.test()
     debug = 1
 
