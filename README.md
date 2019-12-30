@@ -1,16 +1,15 @@
 # 前言
-为方便同学们实现样本选择策略，我们设计了以下模块<br>
-同学们不用关注于数据的加载，模型的训练和预测，评估等等细节<br>
-只需要关注于如何实现样本选择策略。在按照给定的接口实现自定义的采样器之后 <br>
-利用liuy /imlementation/ Almodel.py文件就可以对自定义的采样器进行评估<br>
+为方便同学们实现样本选择策略，我们设计了以下模块,
+同学们不用关注于数据的加载，模型的训练和预测，评估等等细节,
+只需要关注于如何实现样本选择策略。在按照给定的接口实现自定义的采样器之后,
+利用liuy /imlementation/ Almodel.py文件就可以对自定义的采样器进行评估。
 以下文档会先介绍如何运行一个实例，liuy/implementation/Almodel.py <br>
 再介绍采样器接口，以及在实现采样器接口需要注意的细节<br>
 然后介绍了提供的方法（在实现样本选择策略的时候或许要用到），分割模型中计算损失和预测方法<br>
   
 # 实例运行
-文件中我们可以运行liuy/implementation/Almodel.py 文件，该实例中使用了随机采样器，分割模型在训练集中先抽取20%(seed_batch设为0.2)的数据进行训练，作为模型的初始化<br>
-随后利用随机采样器在训练集中每次抽取20%（batch_sise设为0.2）的数据样本，直到样本全都选择完<br>
-在采样器每次采样之后，分割模型再利用采样数据进行训练，并进行评估（评估指标为miou）,记录下每次评估结果<br>
+文件中我们可以运行liuy/implementation/Almodel.py 文件，该实例中使用了随机采样器，分割模型在训练集中先抽取20%(seed_batch设为0.2)的数据进行训练，作为模型的初始化，随后利用随机采样器在训练集中每次抽取20%（batch_sise设为0.2）的数据样本，直到样本全都选择完。
+在采样器每次采样之后，分割模型再利用采样数据进行训练，并进行评估（评估指标为miou）,记录下每次评估结果。<br>
 在运行实例之前，首先需要配置cityscapes数据集<br>
 
 ## 数据集配置路径
@@ -47,9 +46,9 @@ if __name__ == "__main__":
                        seed_batch=0.2
                        )
 ```
-1、image_dir、gt_dir分别修改为自己训练集的图像、标签路径。<br>
-2、data_dir修改为自己 cityscapes的父目录，可参考例子中代码理解。<br>
-3、设置命令行参数 设置分割模型的配置文件。<br>
+1、image_dir、gt_dir分别修改为自己训练集的图像、标签路径<br>
+2、data_dir修改为自己 cityscapes的父目录，可参考例子中代码理解<br>
+3、设置命令行参数 设置分割模型的配置文件<br>
 ```
 --config-file
 detectron2_origin/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_3x.yaml
@@ -81,7 +80,7 @@ generate_one_curve(    image_dir=image_dir,
 
 # 如何实现采样器接口
 
-我们最重要的就是实现样本选择策略即实现采样器接口<br>
+我们最重要的就是实现样本选择策略即实现采样器接口，
 实现liuy /Interface/ BaseSampler自定义采样器之后，替换掉liuy /implementation/ Almodel.py中的随机采样器<br>
 
 ```
@@ -121,9 +120,9 @@ class BaseSampler(metaclass=ABCMeta):
         return
 ```
 
-BaseSampler在传入sampler_name、data_loader参数初始化之后，会得到 self.image_files_list，<br>
-self.image_files_list中的元素'file_name'为cityscapes数据集中一张图像数据的唯一标志，是一张图片的全路径。<br>
-在初始化BaseSampler后，self.image_files_list。包含了训练集中所有的图像数据。<br>
+BaseSampler在传入sampler_name、data_loader参数初始化之后，会得到 self.image_files_list，
+self.image_files_list中的元素'file_name'为cityscapes数据集中一张图像数据的唯一标志，是一张图片的全路径。
+在初始化BaseSampler后，self.image_files_list。包含了训练集中所有的图像数据。
 BaseSampler接口的实现可以可以参考RandomSampler。<br>
 
 ## 随机采样器
