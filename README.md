@@ -77,14 +77,11 @@ generate_one_curve(    image_dir=image_dir,
                        seed_batch=0.2
                        )
 ```
-该函数 ： 先随机从训练集抽取百分之二十的样本（ seed_size=0.2）作为训练样本，用于实例分割模型（seg_model）的初始训练，之后利用采样器<br>
-randomsampler每一次从训练集中抽取百分之二十的训练样本（ batch_size=0.2），在每一次采样器采取到一个bactch_size的样本，将样本加入<br>
-训练样本之后，分割模型用新的训练样本进行训练，再对本轮训练好的分割模型进行评估，并保存评估结果。直到训练集中所有的样本都被采样完。有任意<br>
-一次评估结果优于baseline则说明采样器有效。seed_size和batch_size参数可以调动。<br>
+该函数 ： 先随机从训练集抽取百分之二十的样本（ seed_size=0.2）作为训练样本，用于实例分割模型（seg_model）的初始训练，之后利用采样器randomsampler每一次从训练集中抽取百分之二十的训练样本（ batch_size=0.2），在每一次采样器采取到一个bactch_size的样本，将样本加入训练样本之后，分割模型用新的训练样本进行训练，再对本轮训练好的分割模型进行评估，并保存评估结果。直到训练集中所有的样本都被采样完。有任意一次评估结果优于baseline则说明采样器有效。seed_size和batch_size参数可以调动。
 
 # 如何实现采样器接口
 
-我们最重要的就是实现样本选择策略即实现采样器接口,<br>
+我们最重要的就是实现样本选择策略即实现采样器接口<br>
 实现liuy /Interface/ BaseSampler自定义采样器之后，替换掉liuy /implementation/ Almodel.py中的随机采样器<br>
 
 ```
