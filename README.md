@@ -81,6 +81,7 @@ randomsampler每一次从训练集中抽取百分之二十的训练样本（ bat
 一次评估结果优于baseline则说明采样器有效。
 
 ＃ 如何实现采样器接口
+
 我们最重要的就是实现样本选择策略即实现采样器接口,<br>
 实现liuy /接口/ BaseSampler自定义采样器之后，替换掉liuy /实施/ Almodel.py中的随机采样器<BR>
 
@@ -92,7 +93,7 @@ randomsampler = RandomSampler('randomsampler', data_loader)
 customsampler = CustomSampler('customsampler', data_loader) 
 ``` 
 CustomSampler 为自定义的采样器<br>
-## 采样器接口
+## 采样器接口  
 ```
 class BaseSampler(metaclass=ABCMeta):
     def __init__(self, sampler_name, data_loader, **kwargs):
