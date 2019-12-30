@@ -1,29 +1,16 @@
 
 ##数据集结构 
-
-
-
 data_dir / cityscapes
-
-			/leftImg8bit
-			
-				/train
+		/leftImg8bit
+			/train
+			/val
+			/test
+ 		/gtfine                        
+			/train
+			/val
+			/test
 				
-				/val
 				
-			        /test
-				
-				/sub_train           
-				
- 			/gtfine                        
-			
-				/train
-				
-				/val
-				
-			        /test
-				
-				/sub_train  
 							
                                 
 				
