@@ -239,7 +239,6 @@ configs/Cityscapes/mask_rcnn_R_50_FPN.yaml
          [False, False, False,  ..., False, False, False], <br>
          [False, False, False,  ..., False, False, False], <br>
          [False, False, False,  ..., False, False, False]], <br>
-
         [[False, False, False,  ..., False, False, False], <br>
          [False, False, False,  ..., False, False, False], <br>
          [False, False, False,  ..., False, False, False], <br>
@@ -247,7 +246,6 @@ configs/Cityscapes/mask_rcnn_R_50_FPN.yaml
          [False, False, False,  ..., False, False, False], <br>
          [False, False, False,  ..., False, False, False], <br>
          [False, False, False,  ..., False, False, False]],<br>
-
         [[False, False, False,  ..., False, False, False], <br>
          [False, False, False,  ..., False, False, False], <br>
          [False, False, False,  ..., False, False, False], <br>
