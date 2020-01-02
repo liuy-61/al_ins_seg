@@ -17,8 +17,10 @@ MODEL_NAME = {'Faster_RCNN': '/home/tangyp/detectron2/configs/COCO-Detection/fas
 __all__ = ['InsSegModel',
           ]
 # the dir where to save the model
-TRAINED_MODEL_DIR = '/media/tangyp/Data/model_file/trained_model'
-
+# TRAINED_MODEL_DIR = '/media/tangyp/Data/model_file/trained_model'
+# OUTPUT_DIR = '/media/tangyp/Data/model_file/OUTPUT_DIR'
+from alcloud.alcloud.config import TRAINED_MODEL_DIR
+from alcloud.alcloud.config import OUTPUT_DIR
 class InsSegModel(BaseInsSegModel):
     """Mask_RCNN"""
 
@@ -115,7 +117,7 @@ class InsSegModel(BaseInsSegModel):
 
 
     def save_model(self):
-        with open(os.path.join(TRAINED_MODEL_DIR, self._proj_id + '_model.pkl'), 'wb') as f:
+        with open(os.path.join(OUTPUT_DIR, self._proj_id + '_model.pkl'), 'wb') as f:
             pickle.dump(self.trainer.model, f)
 
 
@@ -132,7 +134,7 @@ def setup(args,project_id,data_dir=None):
     cfg.SOLVER.BASE_LR = 0.00025
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
     cfg.MODEL.MASK_ON = True
-    cfg.OUTPUT_DIR = os.path.join('/media/tangyp/Data/model_file/OUTPUT_DIR','project'+project_id)
+    cfg.OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'project'+project_id)
     register_all_cityscapes(data_dir)
     cfg.DATASETS.TEST = ["cityscapes_fine2_instance_seg_val"]
     cfg.DATASETS.TRAIN = ["cityscapes_fine2_instance_seg_train"]
@@ -147,14 +149,16 @@ if __name__ == "__main__":
     data_dir = '/media/tangyp/Data'
     args = default_argument_parser().parse_args()
     model = InsSegModel(args=args, project_id='_baseline', data_dir=data_dir)
+    miou = model.test()
+    print(miou)
     # model.fit()
     # model.fit_on_subset()
     # losses = model.compute_loss(image_dir=image_dir,gt_dir=gt_dir)
     # for loss in losses:
     #     print(loss)
-    probability = model.predict_proba(image_dir, gt_dir)
-    for prob in probability:
-        print(prob)
+    # probability = model.predict_proba(image_dir, gt_dir)
+    # for prob in probability:
+    #     print(prob)
     # model.test()
     debug = 1
 
