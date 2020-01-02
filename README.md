@@ -232,6 +232,29 @@ configs/Cityscapes/mask_rcnn_R_50_FPN.yaml
         [ 914.9539,  440.7620,  938.4851,  496.9281]], device='cuda:0')), <br>
         'labels': tensor([0, 0, 0], device='cuda:0'), <br>
         'scores': tensor([0.9377, 0.8424, 0.7417],device='cuda:0')} <br>
+        'masks':  tensor([[[False, False, False,  ..., False, False, False], <br>
+         [False, False, False,  ..., False, False, False], <br>
+         [False, False, False,  ..., False, False, False], <br>
+         ..., <br>
+         [False, False, False,  ..., False, False, False], <br>
+         [False, False, False,  ..., False, False, False], <br>
+         [False, False, False,  ..., False, False, False]], <br>
+
+        [[False, False, False,  ..., False, False, False], <br>
+         [False, False, False,  ..., False, False, False], <br>
+         [False, False, False,  ..., False, False, False], <br>
+         ...,
+         [False, False, False,  ..., False, False, False], <br>
+         [False, False, False,  ..., False, False, False], <br>
+         [False, False, False,  ..., False, False, False]],<br>
+
+        [[False, False, False,  ..., False, False, False], <br>
+         [False, False, False,  ..., False, False, False], <br>
+         [False, False, False,  ..., False, False, False], <br>
+         ...,                                              <br>
+         [False, False, False,  ..., False, False, False], <br> 
+         [False, False, False,  ..., False, False, False], <br>
+         [False, False, False,  ..., False, False, False]]], device='cuda:0') <br>
        
 
 
