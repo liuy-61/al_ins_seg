@@ -77,32 +77,39 @@ def generate_one_curve(
     mious = []
     
     # initally, seed_batch pieces of image were selected randomly
-    seleted_image_files = random.sample(image_files_list, seed_batch)
+    selected_image_files = random.sample(image_files_list, seed_batch)
 
     register_a_cityscapes_from_selected_image_files(image_dir=image_dir,
                                                     gt_dir=gt_dir,
-                                                    selected_image_files=seleted_image_files,
-                                                    dataset_name='dataset_from_seleted_iamge_files'
+                                                    selected_image_files=selected_image_files,
+                                                    dataset_name='dataset_from_selected_image_files'
                                                     )
-    data_loader_from_selected_iamge_files = ins_seg_model.trainer.re_build_train_loader(
-        'dataset_from_seleted_iamge_files')
+    data_loader_from_selected_image_files = ins_seg_model.trainer.re_build_train_loader(
+        'dataset_from_selected_image_files')
 
     # n_batches cycles were used to sample all the data of the training set
     n_batches = int(np.ceil(((train_size-seed_batch) * 1/batch_size))) + 1
     for n in range(n_batches):
         n_train = seed_batch + min((train_size - seed_batch), n * batch_size)
-        print('{} data ponints for training in iter{}'.format(n_train, n+1))
-        assert n_train == len(seleted_image_files)
+        print('{} data ponints for training in iter{}'.format(n_train, n))
+        assert n_train == len(selected_image_files)
         data_sizes.append(n_train)
-        ins_seg_model.fit_on_subset(data_loader_from_selected_iamge_files)
+        ins_seg_model.fit_on_subset(data_loader_from_selected_image_files)
         miou = ins_seg_model.test()
         mious.append(miou)
-        print('miou：{} in {} iter'.format(miou['miou'], n+1))
+        print('miou：{} in {} iter'.format(miou['miou'], n))
 
-        n_sample = min(batch_size, train_size - len(seleted_image_files))
-        new_batch = sampler.select_batch(n_sample, already_selected=seleted_image_files)
-        seleted_image_files.extend(new_batch)
+        n_sample = min(batch_size, train_size - len(selected_image_files))
+        new_batch = sampler.select_batch(n_sample, already_selected=selected_image_files)
+        selected_image_files.extend(new_batch)
         print('Requested: %d, Selected: %d' % (n_sample, len(new_batch)))
+        register_a_cityscapes_from_selected_image_files(image_dir=image_dir,
+                                                        gt_dir=gt_dir,
+                                                        selected_image_files=selected_image_files,
+                                                        dataset_name='dataset_from_seleted_iamge_files'
+                                                        )
+        data_loader_from_selected_image_files = ins_seg_model.trainer.re_build_train_loader(
+            'dataset_from_seleted_iamge_files')
         assert len(new_batch) == n_sample
 
     results['mious'] = mious
@@ -118,7 +125,7 @@ if __name__ == "__main__":
     gt_dir = '/media/tangyp/Data/cityscape/gtFine/train'
     data_dir = '/media/tangyp/Data'
     args = default_argument_parser().parse_args()
-    seg_model = InsSegModel(args=args, project_id='AlModel', data_dir=data_dir)
+    seg_model = InsSegModel(args=args, project_id='2020_1_3', data_dir=data_dir)
     data_loader = seg_model.trainer.data_loader
     randomsampler = RandomSampler('randomsampler', data_loader)
     generate_one_curve(image_dir=image_dir,

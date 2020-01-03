@@ -56,6 +56,7 @@ class InsSegModel(BaseInsSegModel):
         :return: test result on val
         """
         self.cfg.DATASETS.TEST = ["cityscapes_fine2_instance_seg_val"]
+        self.cfg.DATASETS.TRAIN = ["cityscapes_fine2_instance_seg_train"]
         self.trainer = LiuyTrainer(self.cfg, self.model)
         miou = self.trainer.test(self.cfg, self.trainer.model)
         return miou
@@ -91,7 +92,7 @@ class InsSegModel(BaseInsSegModel):
                 img = cv2.imread(file_name)
                 prediction = predictor(img)
                 record = {'file_name': file_name, 'boxes': prediction['instances'].pred_boxes, 'labels': prediction['instances'].pred_classes, \
-                          'scores': prediction['instances'].scores}
+                          'scores': prediction['instances'].scores, 'masks':prediction['instances'].pred_masks}
                 results.append(record)
         return results
 
@@ -149,14 +150,14 @@ if __name__ == "__main__":
     data_dir = '/media/tangyp/Data'
     args = default_argument_parser().parse_args()
     model = InsSegModel(args=args, project_id='_baseline', data_dir=data_dir)
-    miou = model.test()
-    print(miou)
+    # miou = model.test()
+    # print(miou)
     # model.fit()
     # model.fit_on_subset()
     # losses = model.compute_loss(image_dir=image_dir,gt_dir=gt_dir)
     # for loss in losses:
     #     print(loss)
-    # probability = model.predict_proba(image_dir, gt_dir)
+    probability = model.predict_proba(image_dir, gt_dir)
     # for prob in probability:
     #     print(prob)
     # model.test()

@@ -11,9 +11,9 @@ class RandomSampler(BaseSampler):
         cnt = 0
         samples = []
         while cnt < n_sample:
-           sample = random.sample(already_selected, 1)
-           if sample not in already_selected:
-               cnt += 1
-               samples.append(sample)
+            sample = random.sample(self.image_files_list, 1)
+            if sample[0] not in already_selected:
+                cnt += 1
+                samples.append(sample[0])
         assert len(samples) == n_sample
         return samples
