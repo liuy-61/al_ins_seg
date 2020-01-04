@@ -50,11 +50,11 @@ if __name__ == "__main__":
 ```
 1、image_dir、gt_dir分别修改为自己训练集的图像、标签路径<br>
 2、data_dir修改为自己 cityscapes的父目录，可参考例子中代码理解<br>
-3、alcloud/alcloud/config.py文件中的
+3、liuy/utils/torch_utils.py文件中的
 ```
-OUTPUT_DIR = '/media/tangyp/Data/model_file/OUTPUT_DIR'
+OUTPUT_DIR = '/home/tangyp/liuy/mode_file/OUTPUT'
 ```
-OUTPUT_DIR为模型中间文件和训练后模型的保存路径，按实际情况修改这个路径。
+OUTPUT_DIR为模型中间文件和训练后模型的保存路径，按实际情况修改这个路径。<br>
 4、设置命令行参数 设置分割模型的配置文件<br>
 ```
 --config-file
