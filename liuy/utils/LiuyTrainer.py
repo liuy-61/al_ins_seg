@@ -59,9 +59,7 @@ class LiuyTrainer(SimpleTrainer):
     def resume_or_load(self, resume=True):
         """
         If `resume==True`, and last checkpoint exists, resume from it.
-
         Otherwise, load a model specified by the config.
-
         Args:
             resume (bool): whether to do resume or not
         """
@@ -78,7 +76,6 @@ class LiuyTrainer(SimpleTrainer):
         """
         Build a list of default hooks, including timing, evaluation,
         checkpointing, lr scheduling, precise BN, writing events.
-
         Returns:
             list[HookBase]:
         """
@@ -128,20 +125,15 @@ class LiuyTrainer(SimpleTrainer):
         a json file, and a tensorboard event file respectively.
         If you'd like a different list of writers, you can overwrite it in
         your trainer.
-
         Returns:
             list[EventWriter]: a list of :class:`EventWriter` objects.
-
         It is now implemented by:
-
         .. code-block:: python
-
             return [
                 CommonMetricPrinter(self.max_iter),
                 JSONWriter(os.path.join(self.cfg.OUTPUT_DIR, "metrics.json")),
                 TensorboardXWriter(self.cfg.OUTPUT_DIR),
             ]
-
         """
         # Assume the default print/log frequency.
         return [
@@ -154,7 +146,6 @@ class LiuyTrainer(SimpleTrainer):
     def train(self):
         """
         Run training.
-
         Returns:
             OrderedDict of results, if evaluation is enabled. Otherwise None.
         """
@@ -166,7 +157,6 @@ class LiuyTrainer(SimpleTrainer):
     def train_on_subset(self, selected_image_ids):
         """
         Run training.
-
         Returns:
             OrderedDict of results, if evaluation is enabled. Otherwise None.
         """
@@ -180,7 +170,6 @@ class LiuyTrainer(SimpleTrainer):
         """
         Returns:
             torch.nn.Module:
-
         It now calls :func:`detectron2.modeling.build_model`.
         Overwrite it if you'd like a different model.
         """
@@ -194,7 +183,6 @@ class LiuyTrainer(SimpleTrainer):
         """
         Returns:
             torch.optim.Optimizer:
-
         It now calls :func:`detectron2.solver.build_optimizer`.
         Overwrite it if you'd like a different optimizer.
         """
@@ -213,7 +201,6 @@ class LiuyTrainer(SimpleTrainer):
         """
         Returns:
             iterable
-
         It now calls :func:`detectron2.data.build_detection_train_loader`.
         Overwrite it if you'd like a different data loader.
         """
@@ -224,7 +211,6 @@ class LiuyTrainer(SimpleTrainer):
         """
         Returns:
             iterable
-
         It now calls :func:`detectron2.data.build_detection_train_loader`.
         Overwrite it if you'd like a different data loader.
         """
@@ -236,7 +222,6 @@ class LiuyTrainer(SimpleTrainer):
         """
         Returns:
             iterable
-
         It now calls :func:`detectron2.data.build_detection_test_loader`.
         Overwrite it if you'd like a different data loader.
         """
@@ -252,9 +237,7 @@ class LiuyTrainer(SimpleTrainer):
             evaluators (list[DatasetEvaluator] or None): if None, will call
                 :meth:`build_evaluator`. Otherwise, must have the same length as
                 `cfg.DATASETS.TEST`.
-
         Returns:
-
         """
         logger = logging.getLogger(__name__)
         logger.info("test")

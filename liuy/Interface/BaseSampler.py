@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from liuy.ins_seg2 import InsSegModel
+
 
 
 class BaseSampler(metaclass=ABCMeta):

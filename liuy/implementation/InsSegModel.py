@@ -6,7 +6,8 @@ from detectron2.config.config import get_cfg
 from liuy.Interface.BaseInsSegModel import BaseInsSegModel
 from detectron2.engine import default_argument_parser
 from liuy.utils.reg_dataset import register_a_cityscapes,register_all_cityscapes
-from alcloud.alcloud.utils.torch_utils import load_prj_model
+from liuy.utils.torch_utils import load_prj_model
+from liuy.utils.torch_utils import OUTPUT_DIR
 from liuy.utils.LiuyTrainer import LiuyTrainer
 from liuy.utils.ComputeLoss import LiuyComputeLoss
 # the  config file of the model
@@ -19,8 +20,6 @@ __all__ = ['InsSegModel',
 # the dir where to save the model
 # TRAINED_MODEL_DIR = '/media/tangyp/Data/model_file/trained_model'
 # OUTPUT_DIR = '/media/tangyp/Data/model_file/OUTPUT_DIR'
-from alcloud.alcloud.config import TRAINED_MODEL_DIR
-from alcloud.alcloud.config import OUTPUT_DIR
 class InsSegModel(BaseInsSegModel):
     """Mask_RCNN"""
 
@@ -48,6 +47,7 @@ class InsSegModel(BaseInsSegModel):
     def fit_on_subset(self, data_loader):
         self.trainer.resume_or_load(resume=self.args.resume)
         self.trainer.data_loader = data_loader
+        self.trainer._data_loader_iter = iter(data_loader)
         self.trainer.train()
         self.save_model()
 
@@ -64,7 +64,6 @@ class InsSegModel(BaseInsSegModel):
 
     def compute_loss(self, image_dir, gt_dir):
         """
-
         :param image_dir:
         :param gt_dir:
         :return: list of dict, a dict includes file_name（as a key to the data) and losses
@@ -99,17 +98,13 @@ class InsSegModel(BaseInsSegModel):
 
     def predict(self, image_dir, gt_dir):
         '''predict
-
         :param data_dir: str
             The path to the data folder.
-
         :param data_names: list, optional (default=None)
             The data names. If not specified, it will all the files in the
             data_dir.
-
         :param transform: torchvision.transforms.Compose, optional (default=None)
             Transforms object that will be applied to the image data.
-
         :return: pred: 1D array
             The prediction result. Shape [n_samples]
         '''
@@ -149,17 +144,16 @@ if __name__ == "__main__":
     gt_dir = '/media/tangyp/Data/cityscape/gtFine/sub_train'
     data_dir = '/media/tangyp/Data'
     args = default_argument_parser().parse_args()
-    model = InsSegModel(args=args, project_id='_baseline', data_dir=data_dir)
+    model = InsSegModel(args=args, project_id='test', data_dir=data_dir)
     # miou = model.test()
     # print(miou)
     # model.fit()
     # model.fit_on_subset()
-    # losses = model.compute_loss(image_dir=image_dir,gt_dir=gt_dir)
+    losses = model.compute_loss(image_dir=image_dir,gt_dir=gt_dir)
     # for loss in losses:
     #     print(loss)
     probability = model.predict_proba(image_dir, gt_dir)
     # for prob in probability:
     #     print(prob)
-    # model.test()
+    model.test()
     debug = 1
-

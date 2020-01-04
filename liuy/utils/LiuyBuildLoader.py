@@ -39,10 +39,8 @@ def filter_images_with_only_crowd_annotations(dataset_dicts):
     Filter out images with none annotations or only crowd annotations
     (i.e., images without non-crowd annotations).
     A common training-time preprocessing on COCO dataset.
-
     Args:
         dataset_dicts (list[dict]): annotations in Detectron2 Dataset format.
-
     Returns:
         list[dict]: the same format, but filtered.
     """
@@ -68,10 +66,8 @@ def filter_images_with_only_crowd_annotations(dataset_dicts):
 def filter_images_with_few_keypoints(dataset_dicts, min_keypoints_per_image):
     """
     Filter out images with too few number of keypoints.
-
     Args:
         dataset_dicts (list[dict]): annotations in Detectron2 Dataset format.
-
     Returns:
         list[dict]: the same format as dataset_dicts, but filtered.
     """
@@ -102,18 +98,15 @@ def filter_images_with_few_keypoints(dataset_dicts, min_keypoints_per_image):
 def load_proposals_into_dataset(dataset_dicts, proposal_file):
     """
     Load precomputed object proposals into the dataset.
-
     The proposal file should be a pickled dict with the following keys:
     - "ids": list[int] or list[str], the image ids
     - "boxes": list[np.ndarray], each is an Nx4 array of boxes corresponding to the image id
     - "objectness_logits": list[np.ndarray], each is an N sized array of objectness scores
         corresponding to the boxes.
     - "bbox_mode": the BoxMode of the boxes array. Defaults to ``BoxMode.XYXY_ABS``.
-
     Args:
         dataset_dicts (list[dict]): annotations in Detectron2 Dataset format.
         proposal_file (str): file path of pre-computed proposals, in pkl format.
-
     Returns:
         list[dict]: the same format as dataset_dicts, but added proposal field.
     """
@@ -210,7 +203,6 @@ def build_batch_data_sampler(
     """
     Return a dataset index sampler that batches dataset indices possibly with
     grouping to improve training efficiency.
-
     Args:
         sampler (torch.utils.data.sampler.Sampler): any subclass of
             :class:`torch.utils.data.sampler.Sampler`.
@@ -226,7 +218,6 @@ def build_batch_data_sampler(
             is disabled. If a list or tuple is given, it must specify for each index
             in the underlying dataset the value to be used for placing that dataset
             index into one of the grouping bins.
-
     Returns:
         A BatchSampler or subclass of BatchSampler.
     """
@@ -248,7 +239,6 @@ def get_detection_dataset_dicts(
 ):
     """
     Load and prepare dataset dicts for instance detection/segmentation and semantic segmentation.
-
     Args:
         dataset_names (list[str]): a list of dataset names
         filter_empty (bool): whether to filter out images without instance annotations
@@ -295,19 +285,16 @@ def get_detection_dataset_dicts(
 def build_detection_train_loader(cfg, mapper=None):
     """
        A data loader is created by the following steps:
-
        1. Use the dataset names in config to query :class:`DatasetCatalog`, and obtain a list of dicts.
        2. Start workers to work on the dicts. Each worker will:
          * Map each metadata dict into another format to be consumed by the model.
          * Batch them by simply putting dicts into a list.
        The batched ``list[mapped_dict]`` is what this dataloader will return.
-
        Args:
            cfg (CfgNode): the config
            mapper (callable): a callable which takes a sample (dict) from dataset and
                returns the format to be consumed by the model.
                By default it will be `DatasetMapper(cfg, True)`.
-
        Returns:
            a torch DataLoader object
        """
@@ -376,14 +363,12 @@ def build_detection_test_loader(cfg, dataset_name, mapper=None):
     Similar to `build_detection_train_loader`.
     But this function uses the given `dataset_name` argument (instead of the names in cfg),
     and uses batch size 1.
-
     Args:
         cfg: a detectron2 CfgNode
         dataset_name (str): a name of the dataset that's available in the DatasetCatalog
         mapper (callable): a callable which takes a sample (dict) from dataset
            and returns the format to be consumed by the model.
            By default it will be `DatasetMapper(cfg, False)`.
-
     Returns:
         DataLoader: a torch DataLoader, that loads the given detection
         dataset, with test-time transformation and batching.

@@ -1,31 +1,10 @@
 from detectron2.engine import default_argument_parser
-from liuy.Interface.BaseAl import BaseAl
 from liuy.implementation.InsSegModel import InsSegModel
 from liuy.implementation.RandomSampler import RandomSampler
 import numpy as np
 import random
 from liuy.utils.reg_dataset import register_a_cityscapes_from_selected_image_files
-# class AlModel(BaseAl):
-#     def __init__(self, segm_model, sampler, batch_size, warmstart_size):
-#         """
-#         :param segm_model: model used to score the samplers.  Expects fit and predict
-#         methods to be implemented.
-#         :param sampler: sampling class from sampling_methods, assumes reference
-#         passed in and sampler not yet instantiated.
-#         :param batch_size: float or int.  float indicates batch size as a percent of
-#       training data
-#         :param warmstart_size: float or int.  float indicates percentage of train data
-#       to use for initial model
-#         """
-#         super(AlModel).__init__(segm_model, sampler)
-#         self.batch_size = batch_size
-#         self.warmstart_size = warmstart_size
-#
-#     def select_batch(self, n_sample, already_selected,
-#                      **kwargs):
-#         kwargs['n_sample'] = n_sample
-#         kwargs['already_selected'] = already_selected
-#         return self.sampler.select_batch(**kwargs)
+
 def generate_one_curve(
                        image_dir,
                        gt_dir,
@@ -84,9 +63,10 @@ def generate_one_curve(
                                                     selected_image_files=selected_image_files,
                                                     dataset_name='dataset_from_selected_image_files'
                                                     )
-    data_loader_from_selected_image_files = ins_seg_model.trainer.re_build_train_loader(
+    data_loader_from_selected_image_files, l = ins_seg_model.trainer.re_build_train_loader(
         'dataset_from_selected_image_files')
-
+    # data_loader_iter = iter(data_loader_from_selected_image_files)
+    # data = next(data_loader_iter)
     # n_batches cycles were used to sample all the data of the training set
     n_batches = int(np.ceil(((train_size-seed_batch) * 1/batch_size))) + 1
     for n in range(n_batches):
@@ -108,7 +88,7 @@ def generate_one_curve(
                                                         selected_image_files=selected_image_files,
                                                         dataset_name='dataset_from_seleted_iamge_files'
                                                         )
-        data_loader_from_selected_image_files = ins_seg_model.trainer.re_build_train_loader(
+        data_loader_from_selected_image_files, l = ins_seg_model.trainer.re_build_train_loader(
             'dataset_from_seleted_iamge_files')
         assert len(new_batch) == n_sample
 
@@ -125,7 +105,7 @@ if __name__ == "__main__":
     gt_dir = '/media/tangyp/Data/cityscape/gtFine/train'
     data_dir = '/media/tangyp/Data'
     args = default_argument_parser().parse_args()
-    seg_model = InsSegModel(args=args, project_id='2020_1_3', data_dir=data_dir)
+    seg_model = InsSegModel(args=args, project_id='almodeltest1', data_dir=data_dir)
     data_loader = seg_model.trainer.data_loader
     randomsampler = RandomSampler('randomsampler', data_loader)
     generate_one_curve(image_dir=image_dir,
