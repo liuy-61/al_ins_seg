@@ -105,7 +105,7 @@ if __name__ == "__main__":
     gt_dir = '/media/tangyp/Data/cityscape/gtFine/train'
     data_dir = '/media/tangyp/Data'
     args = default_argument_parser().parse_args()
-    seg_model = InsSegModel(args=args, project_id='almodeltest1', data_dir=data_dir)
+    seg_model = InsSegModel(args=args, project_id='RandomModel', data_dir=data_dir)
     data_loader = seg_model.trainer.data_loader
     randomsampler = RandomSampler('randomsampler', data_loader)
     generate_one_curve(image_dir=image_dir,

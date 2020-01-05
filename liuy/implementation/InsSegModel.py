@@ -23,8 +23,9 @@ __all__ = ['InsSegModel',
 class InsSegModel(BaseInsSegModel):
     """Mask_RCNN"""
 
-    def __init__(self, args, project_id, data_dir):
+    def __init__(self, args, project_id, data_dir, resume_or_load=False):
         self.args = args
+        self.resume_or_load = resume_or_load
         super(InsSegModel, self).__init__(project_id, data_dir)
         # tow ways to get model
         # 1：load the model which has been trained
@@ -40,12 +41,14 @@ class InsSegModel(BaseInsSegModel):
         self.trainer = LiuyTrainer(self.cfg, self.model)
 
     def fit(self):
-        self.trainer.resume_or_load(resume=self.args.resume)
+        if self.resume_or_load:
+            self.trainer.resume_or_load(resume=self.args.resume)
         self.trainer.train()
         self.save_model()
 
     def fit_on_subset(self, data_loader):
-        self.trainer.resume_or_load(resume=self.args.resume)
+        if self.resume_or_load:
+            self.trainer.resume_or_load(resume=self.args.resume)
         self.trainer.data_loader = data_loader
         self.trainer._data_loader_iter = iter(data_loader)
         self.trainer.train()
