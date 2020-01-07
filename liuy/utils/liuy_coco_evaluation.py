@@ -13,7 +13,7 @@ import pycocotools.mask as mask_util
 import torch
 from fvcore.common.file_io import PathManager
 from pycocotools.coco import COCO
-from pycocotools.cocoeval import COCOeval
+from liuy.utils.liuy_cocoeval import COCOeval
 from tabulate import tabulate
 
 import detectron2.utils.comm as comm
@@ -22,7 +22,7 @@ from detectron2.data.datasets.coco import convert_to_coco_json
 from detectron2.structures import Boxes, BoxMode, pairwise_iou
 from detectron2.utils.logger import create_small_table
 
-from .evaluator import DatasetEvaluator
+from detectron2.evaluation.evaluator import DatasetEvaluator
 
 
 class COCOEvaluator(DatasetEvaluator):
@@ -188,6 +188,7 @@ class COCOEvaluator(DatasetEvaluator):
             res = self._derive_coco_results(
                 coco_eval, task, class_names=self._metadata.get("thing_classes")
             )
+            ious = coco_eval.ious
             self._results[task] = res
 
     def _eval_box_proposals(self):

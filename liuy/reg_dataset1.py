@@ -1,4 +1,7 @@
 import os
+
+from pycocotools import coco
+
 from detectron2.config import get_cfg
 from detectron2.data import DatasetCatalog, MetadataCatalog
 from detectron2.data.datasets import load_cityscapes_instances
@@ -89,10 +92,42 @@ def get_custom_dicts(data_dir):
         debug = 1
     return dataset_dicts
 
+def get_coco_dicts(data_dir):
+    if 'train' in data_dir:
+        file_path = '/media/tangyp/Data/coco/train2014'
+    elif 'val' in data_dir:
+        file_path = '/media/tangyp/Data/coco/val2014'
+    json_file = data_dir
+    coco = COCO(json_file)
+    catIds = coco.getCatIds(catNms=['person'])
+    imgIds = coco.getImgIds(catIds=catIds)
+    imgs = coco.loadImgs(imgIds)
+    dataset_dicts = []
+    for img in imgs:
+        dataset_dict = {}
+        new_img = {'file_name': os.path.join(file_path, img['file_name']), 'height': img['height'],
+                   'width': img['width'],
+                   'image_id': img['id']}
+        annId = coco.getAnnIds(imgIds=img['id'])
+        anns = coco.loadAnns(ids=annId)
+        annotation = {}
+        annotation['annotations'] = []
+        for ann in anns:
+            new_ann = {'iscrowd': ann['iscrowd'], 'bbox': ann['bbox'], 'category_id': ann['category_id'],
+                       'segmentation': ann['segmentation'], 'bbox_mode': BoxMode(1)}
+            annotation['annotations'].append(new_ann)
+        dataset_dict.update(new_img)
+        dataset_dict.update(annotation)
+        dataset_dicts.append(dataset_dict)
+    return dataset_dicts
 
 if __name__ == "__main__":
     args = default_argument_parser().parse_args()
-    data_dir = '/media/tangyp/Data/coco/annotations/instances_train2014.json'
+    data_train_dir = '/media/tangyp/Data/coco/annotations/instances_train2014.json'
     data_val_dir = '/media/tangyp/Data/coco/annotations/instances_val2014.json'
-    DatasetCatalog.register("custom", lambda data_dir=data_dir: get_custom_dicts(data_dir))
-    DatasetCatalog.register("custom_val", lambda data_dir=data_val_dir: get_custom_dicts(data_dir))
+    dicts = get_coco_dicts(data_train_dir)
+    DatasetCatalog.register("coco_train", lambda data_dir=data_train_dir: get_coco_dicts(data_dir))
+    daset_dicts = DatasetCatalog.get("coco_train")
+    # DatasetCatalog.register("custom_val", lambda data_dir=data_val_dir: get_custom_dicts(data_dir))
+
+    debug= 1
