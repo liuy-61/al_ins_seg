@@ -299,7 +299,7 @@ def build_detection_train_loader(cfg, mapper=None):
            a torch DataLoader object
        """
     num_workers = get_world_size()
-    images_per_batch = 1
+    images_per_batch = 2
     assert (
             images_per_batch % num_workers == 0
     ), "SOLVER.IMS_PER_BATCH ({}) must be divisible by the number of workers ({}).".format(

@@ -24,6 +24,8 @@ from detectron2.structures import (
 from . import transforms as T
 from .catalog import MetadataCatalog
 
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class SizeMismatchError(ValueError):
     """

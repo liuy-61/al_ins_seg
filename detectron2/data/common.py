@@ -7,7 +7,8 @@ import torch.utils.data as data
 from detectron2.utils.serialize import PicklableWrapper
 
 __all__ = ["MapDataset", "DatasetFromList"]
-
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 class MapDataset(data.Dataset):
     """

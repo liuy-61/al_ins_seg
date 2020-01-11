@@ -63,9 +63,9 @@ class CoCoSegModel():
         """
         :return: test result on val
         """
-        self.cfg.DATASETS.TEST = ["cityscapes_fine2_instance_seg_val"]
-        self.cfg.DATASETS.TRAIN = ["cityscapes_fine2_instance_seg_train"]
-        self.trainer = LiuyCoCoTrainer(self.cfg, self.model)
+        # self.cfg.DATASETS.TEST = ['coco_val']
+        # self.cfg.DATASETS.TRAIN = ['coco_train']
+        # self.trainer = LiuyCoCoTrainer(self.cfg, self.model)
         miou = self.trainer.test(self.cfg, self.trainer.model)
         return miou
 
@@ -155,11 +155,14 @@ if __name__ == "__main__":
     coco_data = [{'json_file': '/media/tangyp/Data/coco/annotations/instances_train2014.json',
                  'image_root': '/media/tangyp/Data/coco/train2014'
                  },
-                 {'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
+                 {
+                  'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
+                  # 'json_file': '/home/tangyp/liuy/detectron2_origin/liuy/utils/sub_val2014.json',
                   'image_root': '/media/tangyp/Data/coco/val2014'
                  }]
 
     args = default_argument_parser().parse_args()
-    model = CoCoSegModel(args, project_id='coco', coco_data=coco_data, resume_or_load=False)
-    model.fit()
+    model = CoCoSegModel(args, project_id='coco', coco_data=coco_data, resume_or_load=True)
+    # model.fit()
+    model.test()
     debug = 1

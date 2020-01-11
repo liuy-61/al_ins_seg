@@ -8,7 +8,8 @@ from PIL import Image
 
 from . import detection_utils as utils
 from . import transforms as T
-
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 """
 This file contains the default mapping that's applied to "dataset dicts".
 """

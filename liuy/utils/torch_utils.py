@@ -2,7 +2,7 @@ import torch
 import os
 import pickle
 
-OUTPUT_DIR = '/home/tangyp/liuy/mode_file/OUTPUT'
+OUTPUT_DIR = '/media/tangyp/Data/model_file/OUTPUT_DIR'
 # from liuy.implementation.InsSegModel import OUTPUT_DIR
 def select_device(device='', apex=False):
     # device = 'cpu' or '0' or '0,1,2,3'

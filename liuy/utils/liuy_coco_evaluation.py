@@ -144,14 +144,16 @@ class COCOEvaluator(DatasetEvaluator):
         if "proposals" in self._predictions[0]:
             self._eval_box_proposals()
         if "instances" in self._predictions[0]:
-            self._eval_predictions(set(self._tasks))
+            miou ={'miou': self._eval_predictions(set(self._tasks))}
+            return miou
         # Copy so the caller can do whatever with results
-        return copy.deepcopy(self._results)
+
 
     def _eval_predictions(self, tasks):
         """
         Evaluate self._predictions on the given tasks.
         Fill self._results with the metrics of the tasks.
+        return  miou
         """
         self._logger.info("Preparing results for COCO format ...")
         self._coco_results = list(itertools.chain(*[x["instances"] for x in self._predictions]))
@@ -177,19 +179,23 @@ class COCOEvaluator(DatasetEvaluator):
 
         self._logger.info("Evaluating predictions ...")
         for task in sorted(tasks):
-            coco_eval = (
-                _evaluate_predictions_on_coco(
-                    self._coco_api, self._coco_results, task, kpt_oks_sigmas=self._kpt_oks_sigmas
+            if task == 'segm':
+                coco_eval = (
+                    _evaluate_predictions_on_coco(
+                        self._coco_api, self._coco_results, task, kpt_oks_sigmas=self._kpt_oks_sigmas
+                    )
+                    if len(self._coco_results) > 0
+                    else None  # cocoapi does not handle empty results very well
                 )
-                if len(self._coco_results) > 0
-                else None  # cocoapi does not handle empty results very well
-            )
-            debug = 1
-            res = self._derive_coco_results(
-                coco_eval, task, class_names=self._metadata.get("thing_classes")
-            )
-            ious = coco_eval.ious
-            self._results[task] = res
+                ious = coco_eval.ious
+                sum_iou = 0
+                cnt = 0
+                for value in ious.values():
+                    iou = np.mean(value)
+                    sum_iou += iou
+                    cnt += 1
+                miou = sum_iou/cnt
+                return miou
 
     def _eval_box_proposals(self):
         """
@@ -469,7 +475,5 @@ def _evaluate_predictions_on_coco(coco_gt, coco_results, iou_type, kpt_oks_sigma
     if kpt_oks_sigmas:
         coco_eval.params.kpt_oks_sigmas = np.array(kpt_oks_sigmas)
     coco_eval.evaluate()
-    coco_eval.accumulate()
-    coco_eval.summarize()
 
     return coco_eval

@@ -4,9 +4,9 @@ import numpy as np
 import datetime
 import time
 from collections import defaultdict
-from . import mask as maskUtils
+from pycocotools import mask as maskUtils
 import copy
-
+# /home/tangyp/.local/lib/python3.7/site-packages/pycocotools   /home/tangyp/.local/lib/python3.7/site-packages/pycocotools/cocoeval.py
 class COCOeval:
     # Interface for evaluating detection on the Microsoft COCO dataset.
     #
@@ -78,8 +78,11 @@ class COCOeval:
         self.stats = []                     # result summarization
         self.ious = {}                      # ious between all gts and dts
         if not cocoGt is None:
-            self.params.imgIds = sorted(cocoGt.getImgIds())
-            self.params.catIds = sorted(cocoGt.getCatIds())
+            """ fix the category as person
+            """
+            self.params.catIds = sorted(cocoGt.getCatIds('person'))
+            self.params.imgIds = sorted(cocoGt.getImgIds(catIds=self.params.catIds))
+
 
 
     def _prepare(self):
@@ -146,22 +149,19 @@ class COCOeval:
             computeIoU = self.computeIoU
         elif p.iouType == 'keypoints':
             computeIoU = self.computeOks
+
         self.ious = {(imgId, catId): computeIoU(imgId, catId) \
                         for imgId in p.imgIds
                         for catId in catIds}
 
-        evaluateImg = self.evaluateImg
-        maxDet = p.maxDets[-1]
-        self.evalImgs = [evaluateImg(imgId, catId, areaRng, maxDet)
-                 for catId in catIds
-                 for areaRng in p.areaRng
-                 for imgId in p.imgIds
-             ]
-        self._paramsEval = copy.deepcopy(self.params)
-        toc = time.time()
-        print('DONE (t={:0.2f}s).'.format(toc-tic))
 
     def computeIoU(self, imgId, catId):
+        """
+
+        :param imgId:
+        :param catId:
+        :return: iou
+        """
         p = self.params
         if p.useCats:
             gt = self._gts[imgId,catId]
@@ -175,7 +175,9 @@ class COCOeval:
         dt = [dt[i] for i in inds]
         if len(dt) > p.maxDets[-1]:
             dt=dt[0:p.maxDets[-1]]
-
+        """ filter the score below 0.15
+        """
+        dt = [d for d in dt if d['score'] > 0.15]
         if p.iouType == 'segm':
             g = [g['segmentation'] for g in gt]
             d = [d['segmentation'] for d in dt]
@@ -184,12 +186,48 @@ class COCOeval:
             d = [d['bbox'] for d in dt]
         else:
             raise Exception('unknown iouType for iou computation')
+        # g_masks = []
+        # for item in g:
+        #     g_mask = rle2mask(item['counts'], item['size'][0], item['size'][1])
+        #     g_masks.append(g_mask)
+        # d_masks = []
+        # for item in d:
+        #     d_mask = rle2mask(item['counts'], item['size'][0], item['size'][1])
+        #     d_masks.append(d_mask)
+        """ convert rle to mask
+        """
+        g_mask = np.zeros((479, 640))
+        d_mask = np.zeros((479, 640))
+        g_mask = np.zeros((g[0]['size'][0], g[0]['size'][1]))
+        d_mask = np.zeros_like(g_mask)
+        for rle in g:
+            mask = maskUtils.decode(rle)
+            g_mask = np.logical_or(g_mask, mask)
+            debug = 1
+        g_mask = g_mask.astype(np.float32)
 
-        # compute iou between each dt and gt region
-        iscrowd = [int(o['iscrowd']) for o in gt]
-        ious = maskUtils.iou(d,g,iscrowd)
-        return ious
-
+        for rle in d:
+            mask = maskUtils.decode(rle)
+            d_mask = np.logical_or(d_mask, mask)
+            debug = 1
+        d_mask = d_mask.astype(np.float32)
+        area1 = np.sum(g_mask)
+        area2 = np.sum(d_mask)
+        intersection = np.logical_and(g_mask, d_mask)
+        intersection = intersection.astype(np.float32)
+        intersection_area = np.sum(intersection)
+        unio_area = area1 + area2 -intersection_area
+        iou = intersection_area / unio_area
+        return iou
+        debug = 1
+        # g_mask = np.reshape(g_mask, (1, -1))
+        # d_mask = np.reshape(d_mask, (1, -1))
+        # area1 = np.sum(g_mask, axis=0)
+        # area2 = np.sum(d_mask, axis=0)
+        # intersection = np.dot(g_mask.T, d_mask)
+        # unio = area1[:, None] + area2[None, :] - intersection
+        # iou = unio / intersection
+        # debug = 1
     def computeOks(self, imgId, catId):
         p = self.params
         # dimention here should be Nxm
@@ -532,3 +570,19 @@ class Params:
         self.iouType = iouType
         # useSegm is deprecated
         self.useSegm = None
+
+
+
+def rle2mask(rle, width, height):
+    mask= np.zeros(width* height)
+    array = np.asarray([int(x) for x in rle.split()])
+    starts = array[0::2]
+    lengths = array[1::2]
+
+    current_position = 0
+    for index, start in enumerate(starts):
+        current_position += start
+        mask[current_position:current_position+lengths[index]] = 255
+        current_position += lengths[index]
+
+    return mask.reshape(width, height)

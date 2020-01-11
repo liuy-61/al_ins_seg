@@ -14,7 +14,9 @@ from detectron2.evaluation import (
     inference_on_dataset,
     print_csv_format,
     verify_results,
-    SemSegEvaluator, COCOPanopticEvaluator, COCOEvaluator, CityscapesEvaluator, PascalVOCDetectionEvaluator,
+    SemSegEvaluator, COCOPanopticEvaluator,
+    COCOEvaluator,
+    CityscapesEvaluator, PascalVOCDetectionEvaluator,
     LVISEvaluator, DatasetEvaluators)
 from detectron2.modeling import build_model, GeneralizedRCNNWithTTA
 from detectron2.solver import build_lr_scheduler, build_optimizer
@@ -24,7 +26,7 @@ from liuy.utils.Liuy_loss import LiuyTensorboardXWriter
 from detectron2.engine import hooks
 import liuy.utils.liuy_cityscapes_evaluation
 from liuy.utils.LiuyBuildLoader import build_detection_train_loader, build_detection_test_loader
-
+from liuy.utils.liuy_coco_evaluation import COCOEvaluator
 class LiuyCoCoTrainer(SimpleTrainer):
     def __init__(self, cfg, model=None):
 
