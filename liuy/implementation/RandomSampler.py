@@ -25,11 +25,6 @@ class CityRandomSampler(BaseSampler):
 class CoCoRandomSampler(BaseSampler):
     def __init__(self, sampler_name, data_loader):
         super(CoCoRandomSampler, self).__init__(sampler_name, data_loader)
-        self.image_files_list = []
-        lt = data_loader.dataset._dataset._lst
-        # file_name as key to data
-        for item in lt:
-            self.image_files_list.append(item['image_id'])
 
     def select_batch(self, n_sample, already_selected):
         cnt = 0
