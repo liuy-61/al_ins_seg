@@ -22,7 +22,7 @@ for img in data['images']:
     ann_id = coco.getAnnIds(imgIds=img_id)
     ann = coco.loadAnns(ids=ann_id)
     data_2['annotations'].extend(ann)
-    if cnt > 500:
+    if cnt > 50:
         break
 
 

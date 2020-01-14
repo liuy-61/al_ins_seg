@@ -7,6 +7,11 @@ from collections import defaultdict
 from pycocotools import mask as maskUtils
 import copy
 # /home/tangyp/.local/lib/python3.7/site-packages/pycocotools   /home/tangyp/.local/lib/python3.7/site-packages/pycocotools/cocoeval.py
+def sum_list(self, list):
+    sum = 0
+    for item in list:
+        sum += item
+    return sum
 class COCOeval:
     # Interface for evaluating detection on the Microsoft COCO dataset.
     #
@@ -77,6 +82,8 @@ class COCOeval:
         self._paramsEval = {}               # parameters for evaluation
         self.stats = []                     # result summarization
         self.ious = {}                      # ious between all gts and dts
+        self.int_area = 0.0
+        self.uni_area = 0.0
         if not cocoGt is None:
             """ fix the category as person
             """
@@ -149,10 +156,14 @@ class COCOeval:
             computeIoU = self.computeIoU
         elif p.iouType == 'keypoints':
             computeIoU = self.computeOks
-
         self.ious = {(imgId, catId): computeIoU(imgId, catId) \
                         for imgId in p.imgIds
                         for catId in catIds}
+
+        # intersetction_area = sum_list(int_area)
+        # unio_area = sum_list(uni_area)
+        # IoU = intersetction_area/unio_area
+        debug = 1
 
 
     def computeIoU(self, imgId, catId):
@@ -177,7 +188,7 @@ class COCOeval:
             dt=dt[0:p.maxDets[-1]]
         """ filter the score below 0.15
         """
-        dt = [d for d in dt if d['score'] > 0.15]
+        # dt = [d for d in dt if d['score'] > 0.15]
         if p.iouType == 'segm':
             g = [g['segmentation'] for g in gt]
             d = [d['segmentation'] for d in dt]
@@ -196,8 +207,6 @@ class COCOeval:
         #     d_masks.append(d_mask)
         """ convert rle to mask
         """
-        g_mask = np.zeros((479, 640))
-        d_mask = np.zeros((479, 640))
         g_mask = np.zeros((g[0]['size'][0], g[0]['size'][1]))
         d_mask = np.zeros_like(g_mask)
         for rle in g:
@@ -213,12 +222,15 @@ class COCOeval:
         d_mask = d_mask.astype(np.float32)
         area1 = np.sum(g_mask)
         area2 = np.sum(d_mask)
-        intersection = np.logical_and(g_mask, d_mask)
-        intersection = intersection.astype(np.float32)
+        intersection = np.logical_and(g_mask, d_mask).astype(np.float32)
         intersection_area = np.sum(intersection)
-        unio_area = area1 + area2 -intersection_area
+        unio = np.logical_or(g_mask, d_mask).astype(np.float32)
+        unio_area = np.sum(unio)
         iou = intersection_area / unio_area
+        self.int_area += intersection_area
+        self.uni_area += unio_area
         return iou
+
         debug = 1
         # g_mask = np.reshape(g_mask, (1, -1))
         # d_mask = np.reshape(d_mask, (1, -1))

@@ -1,13 +1,15 @@
 import cv2
 import os
 import dill as pickle
+import torch
 
-from detectron2.data import DatasetCatalog
+from detectron2.data import DatasetCatalog, MetadataCatalog
 from detectron2.engine import default_setup, DefaultPredictor
 from detectron2.config.config import get_cfg
+from detectron2.utils.visualizer import Visualizer, ColorMode
 from liuy.Interface.BaseInsSegModel import BaseInsSegModel
 from detectron2.engine import default_argument_parser
-from liuy.utils.reg_dataset import register_a_cityscapes,register_all_cityscapes,get_coco_dicts,register_coco_instances
+from liuy.utils.reg_dataset import register_a_cityscapes,register_coco_instances
 from liuy.utils.torch_utils import load_prj_model
 from liuy.utils.torch_utils import OUTPUT_DIR
 from liuy.utils.LiuyCoCoTrainer import LiuyCoCoTrainer
@@ -47,13 +49,13 @@ class CoCoSegModel():
 
     def fit(self):
         if self.resume_or_load:
-            self.trainer.resume_or_load(resume=self.args.resume)
+            self.trainer.resume_or_load()
         self.trainer.train()
         self.save_model()
 
     def fit_on_subset(self, data_loader):
         if self.resume_or_load:
-            self.trainer.resume_or_load(resume=self.args.resume)
+            self.trainer.resume_or_load()
         self.trainer.data_loader = data_loader
         self.trainer._data_loader_iter = iter(data_loader)
         self.trainer.train()
@@ -89,9 +91,8 @@ class CoCoSegModel():
         """
         self.cfg.MODEL.WEIGHTS = os.path.join(self.cfg.OUTPUT_DIR, 'model_final.pth')
         self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = conf_thres
-        register_a_cityscapes(image_dir, gt_dir, 'dataset_name')
         predictor = DefaultPredictor(self.cfg)
-        data_loader, data_len = LiuyTrainer.build_test_loader(self.cfg, "dataset_name")
+        data_loader, data_len = LiuyTrainer.build_test_loader(self.cfg, "coco_val")
         results = []
         for batch in data_loader:
             for item in batch:
@@ -104,21 +105,36 @@ class CoCoSegModel():
         return results
 
 
-    def predict(self, image_dir, gt_dir):
-        '''predict
-        :param data_dir: str
-            The path to the data folder.
-        :param data_names: list, optional (default=None)
-            The data names. If not specified, it will all the files in the
-            data_dir.
-        :param transform: torchvision.transforms.Compose, optional (default=None)
-            Transforms object that will be applied to the image data.
-        :return: pred: 1D array
-            The prediction result. Shape [n_samples]
-        '''
-        proba_result = self.predict_proba(image_dir, gt_dir)
-        return proba_result
-
+    def predict(self, conf_thres=0.7):
+        self.cfg.MODEL.WEIGHTS = os.path.join(self.cfg.OUTPUT_DIR, 'model_final.pth')
+        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = conf_thres
+        predictor = DefaultPredictor(self.cfg)
+        data_loader, data_len = LiuyTrainer.build_test_loader(self.cfg, "coco_val")
+        results = []
+        for batch in data_loader:
+            for item in batch:
+                file_name = item['file_name']
+                img = cv2.imread(file_name)
+                prediction = predictor(img)
+                img = img[:, :, ::-1]
+                visualizer = Visualizer(img,  MetadataCatalog.get(
+            self.cfg.DATASETS.TEST[0] if len(self.cfg.DATASETS.TEST) else "__unused"
+        ), instance_mode=ColorMode.IMAGE)
+                vis_output = None
+                if "sem_seg" in prediction:
+                     vis_output = visualizer.draw_sem_seg(
+                        prediction["sem_seg"].argmax(dim=0).to(torch.device("cpu"))
+                    )
+                if "instances" in prediction:
+                    instances = prediction["instances"].to(torch.device("cpu"))
+                    vis_output = visualizer.draw_instance_predictions(predictions=instances)
+                out_filename = os.path.join(self.cfg.OUTPUT_DIR, os.path.basename(file_name))
+                vis_output.save(out_filename)
+                record = {'file_name': file_name, 'boxes': prediction['instances'].pred_boxes,
+                          'labels': prediction['instances'].pred_classes, \
+                          'scores': prediction['instances'].scores, 'masks': prediction['instances'].pred_masks}
+                results.append(record)
+        return results
 
     def save_model(self):
         with open(os.path.join(OUTPUT_DIR, self.project_id + '_model.pkl'), 'wb') as f:
@@ -139,8 +155,6 @@ def setup(args, project_id, coco_data):
     cfg.OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'project'+project_id)
     register_coco_instances(name='coco_train', json_file=coco_data[0]['json_file'], image_root=coco_data[0]['image_root'])
     register_coco_instances(name='coco_val', json_file=coco_data[1]['json_file'], image_root=coco_data[1]['image_root'])
-    # cfg.DATASETS.TEST = ['coco_2014_val']
-    # cfg.DATASETS.TRAIN = ['coco_2014_train']
     cfg.DATASETS.TEST = ['coco_val']
     cfg.DATASETS.TRAIN = ['coco_train']
 
@@ -150,8 +164,6 @@ def setup(args, project_id, coco_data):
 
 
 if __name__ == "__main__":
-    data_train_dir = '/media/tangyp/Data/coco/annotations/instances_train2014.json'
-    data_val_dir = '/media/tangyp/Data/coco/annotations/instances_val2014.json'
     coco_data = [{'json_file': '/media/tangyp/Data/coco/annotations/instances_train2014.json',
                  'image_root': '/media/tangyp/Data/coco/train2014'
                  },
@@ -162,7 +174,9 @@ if __name__ == "__main__":
                  }]
 
     args = default_argument_parser().parse_args()
-    model = CoCoSegModel(args, project_id='coco', coco_data=coco_data, resume_or_load=True)
-    # model.fit()
+    model = CoCoSegModel(args, project_id='coco_test', coco_data=coco_data, resume_or_load=False
+                         )
+    model.fit()
     model.test()
+    # model.predict()
     debug = 1

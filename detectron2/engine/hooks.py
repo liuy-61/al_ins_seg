@@ -345,8 +345,8 @@ class EvalHook(HookBase):
     def after_train(self):
         # func is likely a closure that holds reference to the trainer
         # therefore we clean it to avoid circular reference in the end
-        del self._func
-
+        # del self._func
+        pass
 
 class PreciseBN(HookBase):
     """

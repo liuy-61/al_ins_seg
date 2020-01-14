@@ -15,18 +15,18 @@ MODEL_NAME = {'Faster_RCNN': '/home/tangyp/detectron2/configs/COCO-Detection/fas
               'Mask_RCNN':'/home/tangyp/liuy/detectron2_origin/configs/Cityscapes/mask_rcnn_R_50_FPN.yaml'
               }
 
-__all__ = ['InsSegModel',
-          ]
+__all__ = ['CitySegModel',
+           ]
 # the dir where to save the model
 # TRAINED_MODEL_DIR = '/media/tangyp/Data/model_file/trained_model'
 # OUTPUT_DIR = '/media/tangyp/Data/model_file/OUTPUT_DIR'
-class InsSegModel(BaseInsSegModel):
+class CitySegModel(BaseInsSegModel):
     """Mask_RCNN"""
 
     def __init__(self, args, project_id, data_dir, resume_or_load=False):
         self.args = args
         self.resume_or_load = resume_or_load
-        super(InsSegModel, self).__init__(project_id, data_dir)
+        super(CitySegModel, self).__init__(project_id, data_dir)
         # tow ways to get model
         # 1：load the model which has been trained
         # 2：use the function：LiuyTrainer.build_model(self.cfg)
@@ -143,19 +143,24 @@ def setup(args,project_id,data_dir=None):
 
 
 if __name__ == "__main__":
-    image_dir = '/media/tangyp/Data/cityscape/leftImg8bit/sub_train'
+    img_dir = '/media/tangyp/Data/cityscape/leftImg8bit/sub_train'
     gt_dir = '/media/tangyp/Data/cityscape/gtFine/sub_train'
     data_dir = '/media/tangyp/Data'
+    city_data = {
+        'img_dir': '/media/tangyp/Data/cityscape/leftImg8bit/sub_train',
+        'gt_dir': '/media/tangyp/Data/cityscape/gtFine/sub_train',
+        'data_dir': '/media/tangyp/Data'
+    }
     args = default_argument_parser().parse_args()
-    model = InsSegModel(args=args, project_id='test', data_dir=data_dir)
+    model = CitySegModel(args=args, project_id='test', data_dir=data_dir)
     # miou = model.test()
     # print(miou)
-    # model.fit()
+    model.fit()
     # model.fit_on_subset()
-    losses = model.compute_loss(image_dir=image_dir,gt_dir=gt_dir)
+    losses = model.compute_loss(image_dir=img_dir, gt_dir=gt_dir)
     # for loss in losses:
     #     print(loss)
-    probability = model.predict_proba(image_dir, gt_dir)
+    probability = model.predict_proba(img_dir, gt_dir)
     # for prob in probability:
     #     print(prob)
     model.test()

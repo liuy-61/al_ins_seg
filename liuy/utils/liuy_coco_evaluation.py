@@ -188,6 +188,7 @@ class COCOEvaluator(DatasetEvaluator):
                     else None  # cocoapi does not handle empty results very well
                 )
                 ious = coco_eval.ious
+                IoU = coco_eval.int_area/coco_eval.uni_area
                 sum_iou = 0
                 cnt = 0
                 for value in ious.values():
