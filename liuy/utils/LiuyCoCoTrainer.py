@@ -1,4 +1,5 @@
 from detectron2.engine.train_loop import SimpleTrainer
+# from liuy.utils.liuy_train_loop import SimpleTrainer
 import logging
 import os
 from collections import OrderedDict
@@ -28,14 +29,18 @@ import liuy.utils.liuy_cityscapes_evaluation
 from liuy.utils.LiuyBuildLoader import build_detection_train_loader, build_detection_test_loader
 from liuy.utils.liuy_coco_evaluation import COCOEvaluator
 class LiuyCoCoTrainer(SimpleTrainer):
-    def __init__(self, cfg, model=None):
+    def __init__(self, cfg, model=None, data_loader=None):
 
         if model is not None:
             model = model
         else:
             model = self.build_model(cfg)
         optimizer = self.build_optimizer(cfg, model)
-        self.data_loader, self.data_len = self.build_train_loader(cfg)
+        if data_loader is not None:
+            self.data_loader = data_loader
+            self.data_len = data_loader.dataset._dataset._lst
+        else:
+            self.data_loader, self.data_len = self.build_train_loader(cfg)
         # For training, wrap with DDP. But don't need this for inference.
         if comm.get_world_size() > 1:
             model = DistributedDataParallel(

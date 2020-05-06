@@ -1,7 +1,7 @@
 from detectron2.engine import default_argument_parser
-from liuy.implementation.CitySegModel import CitySegModel
 from liuy.implementation.CoCoSegModel import CoCoSegModel
-from liuy.implementation.RandomSampler import CityRandomSampler, CoCoRandomSampler
+from liuy.implementation.RandomSampler import CoCoRandomSampler
+from liuy.implementation.LossSampler import LossSampler
 import numpy as np
 import random
 from liuy.utils.reg_dataset import register_a_cityscapes_from_selected_image_files,register_coco_instances_from_selected_image_files
@@ -74,13 +74,18 @@ def generate_one_curve(
         print('{} data ponints for training in iter{}'.format(n_train, n))
         assert n_train == len(selected_image_files)
         data_sizes.append(n_train)
-        ins_seg_model.fit_on_subset(data_loader_from_selected_image_files)
+        ins_seg_model.fit_on_subset(data_loader_from_selected_image_files,n)
         miou = ins_seg_model.test()
         mious.append(miou)
         print('miou：{} in {} iter'.format(miou['miou'], n))
 
+        # get the losses for loss_sampler
+        losses = ins_seg_model.compute_loss(json_file=coco_data[0]['json_file'],
+                                            image_root=coco_data[0]['image_root'],)
+
+
         n_sample = min(batch_size, train_size - len(selected_image_files))
-        new_batch = sampler.select_batch(n_sample, already_selected=selected_image_files)
+        new_batch = sampler.select_batch(n_sample, already_selected=selected_image_files, losses=losses)
         selected_image_files.extend(new_batch)
         print('Requested: %d, Selected: %d' % (n_sample, len(new_batch)))
         register_coco_instances_from_selected_image_files(name='coco_from_selected_image',
@@ -97,23 +102,34 @@ def generate_one_curve(
     print(results)
 
 
+
+def reset_seg_model(seg_model,coco_data):
+    args = seg_model.args
+    project_id = seg_model.project_id
+    resume_or_load = seg_model.resume_or_load
+    del seg_model
+    new_seg_model = CoCoSegModel(args, project_id, coco_data, resume_or_load)
+    return new_seg_model
+
+
 if __name__ == "__main__":
-    coco_data = [{'json_file': '/media/tangyp/Data/coco/annotations/instances_train2014.json',
+    coco_data = [{#'json_file': '/media/tangyp/Data/coco/annotations/instances_train2014.json',
+                  'json_file': '/media/tangyp/Data/coco/annotations/sub_train2014.json', # a subset of train set
                   'image_root': '/media/tangyp/Data/coco/train2014'
                   },
                  {
-                     'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
-                     # 'json_file': '/home/tangyp/liuy/detectron2_origin/liuy/utils/sub_val2014.json',
+                     # 'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
+                     'json_file': '/media/tangyp/Data/coco/annotations/sub_val2014.json',# a subset of val set
                      'image_root': '/media/tangyp/Data/coco/val2014'
                  }]
     args = default_argument_parser().parse_args()
-    seg_model = CoCoSegModel(args, project_id='coco', coco_data=coco_data, resume_or_load=False)
+    seg_model = CoCoSegModel(args, project_id='test', coco_data=coco_data, resume_or_load=False)
     data_loader = seg_model.trainer.data_loader
-    randomsampler = CoCoRandomSampler('randomsampler', data_loader)
+    losssampler = LossSampler('loss_sampler', data_loader)
     generate_one_curve(coco_data=coco_data,
                        data_loader=data_loader,
-                       sampler=randomsampler,
+                       sampler=losssampler,
                        ins_seg_model=seg_model,
-                       batch_size=0.4,
-                       seed_batch=0.2
+                       batch_size=0.2,
+                       seed_batch=0.4,
                        )

@@ -3,6 +3,7 @@ import os
 import dill as pickle
 import torch
 import copy
+from torch.nn.parallel import DistributedDataParallel
 from detectron2.data import DatasetCatalog, MetadataCatalog
 from detectron2.engine import default_setup, DefaultPredictor
 from detectron2.config.config import get_cfg
@@ -15,6 +16,8 @@ from liuy.utils.torch_utils import OUTPUT_DIR
 from liuy.utils.LiuyCoCoTrainer import LiuyCoCoTrainer
 from liuy.utils.ComputeLoss import LiuyComputeLoss
 from liuy.utils.LiuyTrainer import LiuyTrainer
+from detectron2.utils import comm
+from detectron2.checkpoint import DetectionCheckpointer
 # the  config file of the model
 MODEL_NAME = {'Faster_RCNN': '/home/tangyp/detectron2/configs/COCO-Detection/faster_rcnn_R_50_C4_1x.yaml',
 
@@ -42,7 +45,7 @@ class CoCoSegModel():
         if self.model is None:
                 self.model = LiuyCoCoTrainer.build_model(self.cfg)
                 self.model = self.model.to(self.device)
-                print("Initialize a pre-trained model for project{}".format(project_id))
+                print("Initialize a pre-trained model for project {}".format(project_id))
         else:
             print("load project {} model from file".format(project_id))
         self.trainer = LiuyCoCoTrainer(self.cfg, self.model)
@@ -53,13 +56,62 @@ class CoCoSegModel():
         self.trainer.train()
         self.save_model()
 
-    def fit_on_subset(self, data_loader):
+    # def fit_on_subset(self, data_loader, reset_model=True):
+    #     if self.resume_or_load:
+    #         self.trainer.resume_or_load()
+    #     if reset_model:
+    #         del self.trainer.model
+    #         self.trainer.model = LiuyCoCoTrainer.build_model(self.cfg).to(self.device)
+    #         self.trainer.model.train()
+    #
+    #         del self.trainer.optimizer
+    #         self.trainer.optimizer = LiuyCoCoTrainer.build_optimizer(self.cfg, self.trainer.model)
+    #
+    #         self.trainer.data_loader = data_loader
+    #         self.trainer._data_loader_iter = iter(data_loader)
+    #
+    #         if comm.get_world_size() > 1:
+    #             self.trainer.model = DistributedDataParallel(
+    #                 self.trainer.model, device_ids=[comm.get_local_rank()], broadcast_buffers=False
+    #             )
+    #         del self.trainer.scheduler
+    #         self.trainer.scheduler = LiuyCoCoTrainer.build_lr_scheduler(self.cfg, self.trainer.optimizer)
+    #
+    #         del self.trainer.checkpointer
+    #         self.trainer.checkpointer = DetectionCheckpointer(
+    #             self.trainer.model,
+    #             self.cfg.OUTPUT_DIR,
+    #             optimizer=self.trainer.optimizer,
+    #             scheduler=self.trainer.scheduler
+    #         )
+    #         self.trainer.start_iter = 0
+    #         self.trainer.max_iter = self.cfg.SOLVER.MAX_ITER
+    #         self.trainer.register_hooks(self.trainer.build_hooks())
+    #     self.trainer.train()
+    #     self.save_model()
+
+    # def fit_on_subset(self, data_loader, reset_model=True):
+    #     if self.resume_or_load:
+    #          self.trainer.resume_or_load()
+    #     if reset_model:
+    #         del self.model
+    #         del self.trainer
+    #         self.model = LiuyCoCoTrainer.build_model(self.cfg)
+    #         self.model = self.model.to(self.device)
+    #         self.trainer = LiuyCoCoTrainer(self.cfg, self.model)
+    #     self.trainer.data_loader = data_loader
+    #     self.trainer._data_loader_iter = iter(data_loader)
+    #     self.trainer.train()
+    #     self.save_model()
+
+
+    def fit_on_subset(self, data_loader, iteration=None):
         if self.resume_or_load:
             self.trainer.resume_or_load()
         self.trainer.data_loader = data_loader
         self.trainer._data_loader_iter = iter(data_loader)
         self.trainer.train()
-        self.save_model()
+        self.save_model(iteration)
 
     def test(self):
         """
@@ -68,6 +120,8 @@ class CoCoSegModel():
         # self.cfg.DATASETS.TEST = ['coco_val']
         # self.cfg.DATASETS.TRAIN = ['coco_train']
         # self.trainer = LiuyCoCoTrainer(self.cfg, self.model)
+        # if self.resume_or_load:
+        #     self.trainer.resume_or_load()
         miou = self.trainer.test(self.cfg, self.trainer.model)
         return miou
 
@@ -140,9 +194,13 @@ class CoCoSegModel():
         #         results.append(record)
         # return results
 
-    def save_model(self):
-        with open(os.path.join(OUTPUT_DIR, self.project_id + '_model.pkl'), 'wb') as f:
-            pickle.dump(self.trainer.model, f)
+    def save_model(self, iteration=None):
+        if iteration is not None:
+            with open(os.path.join(OUTPUT_DIR, self.project_id + '_' +str(iteration) +'_model.pkl'), 'wb') as f:
+                pickle.dump(self.trainer.model, f)
+        else:
+            with open(os.path.join(OUTPUT_DIR, self.project_id + '_model.pkl'), 'wb') as f:
+                pickle.dump(self.trainer.model, f)
 
 
 def setup(args, project_id, coco_data):
@@ -169,19 +227,17 @@ def setup(args, project_id, coco_data):
 
 if __name__ == "__main__":
     coco_data = [{'json_file': '/media/tangyp/Data/coco/annotations/instances_train2014.json',
-                 'image_root': '/media/tangyp/Data/coco/train2014'
-                 },
+                  'image_root': '/media/tangyp/Data/coco/train2014'
+                  },
                  {
-                  # 'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
-                  'json_file': '/home/tangyp/liuy/detectron2_origin/liuy/utils/sub_val2014.json',
-                  'image_root': '/media/tangyp/Data/coco/val2014'
+                     # 'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
+                     'json_file': '/media/tangyp/Data/coco/annotations/sub_val2014.json',
+                     'image_root': '/media/tangyp/Data/coco/val2014'
                  }]
-
     args = default_argument_parser().parse_args()
-    model = CoCoSegModel(args, project_id='coco', coco_data=coco_data, resume_or_load=False
-                         )
-    # model.fit()
-    # model.test()
+    seg_model = CoCoSegModel(args, project_id='test', coco_data=coco_data, resume_or_load=False)
+    seg_model.fit()
+    # miou=seg_model.test()
     # model.predict()
-    prediction = model.predict_proba(coco_data[1]['json_file'], coco_data[1]['image_root'])
+    #prediction = model.predict_proba(coco_data[1]['json_file'], coco_data[1]['image_root'])
     debug = 1
