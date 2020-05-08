@@ -235,8 +235,8 @@ if __name__ == "__main__":
                      'image_root': '/media/tangyp/Data/coco/val2014'
                  }]
     args = default_argument_parser().parse_args()
-    seg_model = CoCoSegModel(args, project_id='test', coco_data=coco_data, resume_or_load=False)
-    seg_model.fit()
+    seg_model = CoCoSegModel(args, project_id='coco', coco_data=coco_data, resume_or_load=False)
+    seg_model.test()
     # miou=seg_model.test()
     # model.predict()
     #prediction = model.predict_proba(coco_data[1]['json_file'], coco_data[1]['image_root'])

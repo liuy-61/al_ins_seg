@@ -90,12 +90,12 @@ if __name__ == "__main__":
                   'image_root': '/media/tangyp/Data/coco/train2014'
                   },
                  {
-                     'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
-                     # 'json_file': '/media/tangyp/Data/coco/annotations/sub_val2014.json',
+                     # 'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
+                     'json_file': '/media/tangyp/Data/coco/annotations/sub_val2014.json',
                      'image_root': '/media/tangyp/Data/coco/val2014'
                  }]
     args = default_argument_parser().parse_args()
-    project_id = 'Random'
+    project_id = '20percentdata'
     # randomsampler = CoCoRandomSampler('randomsampler', data_loader)
-    train_on_seed(args=args, project_id=project_id, coco_data=coco_data, resume_or_load=False, seed_batch=0.2)
-    # train_on_batch(args=args, project_id=project_id, coco_data=coco_data, resume_or_load=False, seed_batch=0.2, batch_size=0.2)
+    train_on_seed(args=args, project_id=project_id, coco_data=coco_data, resume_or_load=True, seed_batch=0.15)
+    # train_on_batch(args=args, project_id=project_id, coco_data=coco_data, resume_or_load=False, seed_batch=0.2, batch_size=0.05)
