@@ -33,7 +33,7 @@ __all__ = ['CoCoSegModel',
 class CoCoSegModel():
     """Mask_RCNN"""
 
-    def __init__(self, args, project_id, coco_data, resume_or_load=False):
+    def __init__(self, args, project_id, coco_data, resume_or_load=True):
         self.args = args
         self.project_id = project_id
         self.resume_or_load = resume_or_load
@@ -235,7 +235,7 @@ if __name__ == "__main__":
                      'image_root': '/media/tangyp/Data/coco/val2014'
                  }]
     args = default_argument_parser().parse_args()
-    seg_model = CoCoSegModel(args, project_id='coco', coco_data=coco_data, resume_or_load=False)
+    seg_model = CoCoSegModel(args, project_id='coco', coco_data=coco_data, resume_or_load=True)
     seg_model.test()
     # miou=seg_model.test()
     # model.predict()

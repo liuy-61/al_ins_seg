@@ -123,7 +123,7 @@ if __name__ == "__main__":
                      'image_root': '/media/tangyp/Data/coco/val2014'
                  }]
     args = default_argument_parser().parse_args()
-    seg_model = CoCoSegModel(args, project_id='test', coco_data=coco_data, resume_or_load=False)
+    seg_model = CoCoSegModel(args, project_id='test', coco_data=coco_data, resume_or_load=True)
     data_loader = seg_model.trainer.data_loader
     losssampler = LossSampler('loss_sampler', data_loader)
     generate_one_curve(coco_data=coco_data,
