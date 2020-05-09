@@ -156,6 +156,8 @@ class LiuyCoCoTrainer(SimpleTrainer):
         Returns:
             OrderedDict of results, if evaluation is enabled. Otherwise None.
         """
+        data_len = len(self.data_loader.dataset._dataset._lst)
+        self.max_iter = int((270000 * data_len) / 45174)
         super().train(self.start_iter, self.max_iter)
         if hasattr(self, "_last_eval_results") and comm.is_main_process():
             verify_results(self.cfg, self._last_eval_results)

@@ -226,7 +226,9 @@ def setup(args, project_id, coco_data):
 
 
 if __name__ == "__main__":
-    coco_data = [{'json_file': '/media/tangyp/Data/coco/annotations/instances_train2014.json',
+    coco_data = [{
+                    # 'json_file': '/media/tangyp/Data/coco/annotations/instances_train2014.json',
+                    'json_file': '/media/tangyp/Data/coco/annotations/sub_train2014.json',
                   'image_root': '/media/tangyp/Data/coco/train2014'
                   },
                  {
@@ -235,7 +237,7 @@ if __name__ == "__main__":
                      'image_root': '/media/tangyp/Data/coco/val2014'
                  }]
     args = default_argument_parser().parse_args()
-    seg_model = CoCoSegModel(args, project_id='test', coco_data=coco_data, resume_or_load=True)
+    seg_model = CoCoSegModel(args, project_id='test_iter', coco_data=coco_data, resume_or_load=True)
     seg_model.fit()
     seg_model.test()
     # miou=seg_model.test()
