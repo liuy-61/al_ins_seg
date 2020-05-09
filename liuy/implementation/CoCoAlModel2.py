@@ -81,7 +81,7 @@ def train_on_batch(args, project_id, coco_data, resume_or_load,seed_batch,batch_
             assert n_train == len(selected_image_files)
             ins_seg_model.fit_on_subset(data_loader_from_selected_image_files,iteration=n)
             miou = ins_seg_model.test()
-            print('miou：{} in {} iter'.format(miou['miou'], n))
+            print('miou：{} in {} iter'.format(miou['miou'],  n))
             break
 
 
