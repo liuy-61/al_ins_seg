@@ -98,4 +98,4 @@ if __name__ == "__main__":
     project_id = 'Base'
     # randomsampler = CoCoRandomSampler('randomsampler', data_loader)
     train_on_seed(args=args, project_id=project_id, coco_data=coco_data, resume_or_load=True, seed_batch=0.1)
-    # train_on_batch(args=args, project_id=project_id, coco_data=coco_data, resume_or_load=False, seed_batch=0.1, batch_size=0.05)
+    # train_on_batch(args=args, project_id=project_id, coco_data=coco_data, resume_or_load=Ture, seed_batch=0.1, batch_size=0.05)

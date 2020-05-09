@@ -228,7 +228,7 @@ def setup(args, project_id, coco_data):
 if __name__ == "__main__":
     coco_data = [{
                     # 'json_file': '/media/tangyp/Data/coco/annotations/instances_train2014.json',
-                    'json_file': '/media/tangyp/Data/coco/annotations/sub_train2014.json',
+                  'json_file': '/media/tangyp/Data/coco/annotations/sub_train2014.json',
                   'image_root': '/media/tangyp/Data/coco/train2014'
                   },
                  {
