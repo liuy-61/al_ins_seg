@@ -95,7 +95,7 @@ if __name__ == "__main__":
                      'image_root': '/media/tangyp/Data/coco/val2014'
                  }]
     args = default_argument_parser().parse_args()
-    project_id = 'Base'
+    project_id = 'Basex'
     # randomsampler = CoCoRandomSampler('randomsampler', data_loader)
     train_on_seed(args=args, project_id=project_id, coco_data=coco_data, resume_or_load=True, seed_batch=0.1)
     # train_on_batch(args=args, project_id=project_id, coco_data=coco_data, resume_or_load=Ture, seed_batch=0.1, batch_size=0.05)

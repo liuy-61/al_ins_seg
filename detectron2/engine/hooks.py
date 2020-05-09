@@ -15,7 +15,7 @@ from fvcore.nn.precise_bn import get_bn_modules, update_bn_stats
 
 import detectron2.utils.comm as comm
 from detectron2.evaluation.testing import flatten_results_dict
-from detectron2.utils.events import EventStorage, EventWriter
+from detectron2.utils.events import EventStorage, EventWriter,CommonMetricPrinter
 
 from .train_loop import HookBase
 
@@ -163,7 +163,10 @@ class PeriodicWriter(HookBase):
             self.trainer.iter == self.trainer.max_iter - 1
         ):
             for writer in self._writers:
-                writer.write()
+                if isinstance(writer, CommonMetricPrinter):
+                    writer.write(self.trainer.max_iter)
+                else:
+                    writer.write()
 
     def after_train(self):
         for writer in self._writers:

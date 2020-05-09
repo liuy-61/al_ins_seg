@@ -146,7 +146,7 @@ class CommonMetricPrinter(EventWriter):
         self.logger = logging.getLogger(__name__)
         self._max_iter = max_iter
 
-    def write(self):
+    def write(self, max_iter=None):
         storage = get_event_storage()
         iteration = storage.iter
 
@@ -155,8 +155,12 @@ class CommonMetricPrinter(EventWriter):
         try:
             data_time = storage.history("data_time").avg(20)
             time = storage.history("time").global_avg()
-            eta_seconds = storage.history("time").median(1000) * (self._max_iter - iteration)
-            eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
+            if max_iter is not None:
+                eta_seconds = storage.history("time").median(1000) * (max_iter - iteration)
+                eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
+            else:
+                eta_seconds = storage.history("time").median(1000) * (self._max_iter - iteration)
+                eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
         except KeyError:  # they may not exist in the first few iterations (due to warmup)
             pass
 
