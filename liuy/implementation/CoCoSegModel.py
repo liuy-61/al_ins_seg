@@ -234,13 +234,13 @@ if __name__ == "__main__":
                   'image_root': '/media/tangyp/Data/coco/train2014'
                   },
                  {
-                     # 'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
-                     'json_file': '/media/tangyp/Data/coco/annotations/sub_val2014.json',
+                     'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
+                     # 'json_file': '/media/tangyp/Data/coco/annotations/sub_val2014.json',
                      'image_root': '/media/tangyp/Data/coco/val2014'
                  }]
     args = default_argument_parser().parse_args()
-    seg_model = CoCoSegModel(args, project_id='test_iter', coco_data=coco_data, train_size=100, resume_or_load=True)
-    seg_model.fit()
+    seg_model = CoCoSegModel(args, project_id='random_base1', coco_data=coco_data, train_size=100, resume_or_load=True)
+    # seg_model.fit()
     seg_model.test()
     # miou=seg_model.test()
     # model.predict()
