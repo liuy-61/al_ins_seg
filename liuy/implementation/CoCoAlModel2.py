@@ -7,7 +7,7 @@ from liuy.utils.reg_dataset import register_a_cityscapes_from_selected_image_fil
     register_coco_instances_from_selected_image_files
 from liuy.utils.img_list import save_img_list, read_img_list, get_iter
 import time
-
+from liuy.utils.seed_torch import seed_torch
 
 def train_on_seed(args, project_id, coco_data, resume_or_load, seed_batch):
     "" "init seg_model  """
@@ -26,7 +26,8 @@ def train_on_seed(args, project_id, coco_data, resume_or_load, seed_batch):
 
     image_files_list = read_img_list(project_id=project_id, iteration=100)
     train_size = len(image_files_list)
-    seed_batch = int(seed_batch * train_size)
+    if seed_batch < 1:
+        seed_batch = int(seed_batch * train_size)
 
     selected_image_files = random.sample(image_files_list, seed_batch)
     save_img_list(project_id=project_id, iteration=0, img_id_list=selected_image_files)
@@ -56,8 +57,10 @@ def train_on_batch(args, project_id, coco_data, resume_or_load, seed_batch, batc
     # get the whole indexes of coco
     image_files_list = read_img_list(project_id=project_id, iteration=100)
     train_size = len(image_files_list)
-    seed_batch = int(seed_batch * train_size)
-    batch_size = int(batch_size * train_size)
+    if seed_batch < 1:
+        seed_batch = int(seed_batch * train_size)
+    if batch_size < 1:
+        batch_size = int(batch_size * train_size)
 
     # get the iter_num now by accessing saved indexes
     iter_num = get_iter(project_id=project_id)
@@ -105,6 +108,7 @@ def train_on_batch(args, project_id, coco_data, resume_or_load, seed_batch, batc
 
 
 if __name__ == "__main__":
+    seed_torch()
     coco_data = [{'json_file': '/media/tangyp/Data/coco/annotations/instances_train2014.json',
                   'image_root': '/media/tangyp/Data/coco/train2014'
                   },
