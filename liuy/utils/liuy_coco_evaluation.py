@@ -25,7 +25,7 @@ from detectron2.utils.logger import create_small_table
 from detectron2.evaluation.evaluator import DatasetEvaluator
 
 
-class COCOEvaluator(DatasetEvaluator):
+class Liuy_COCOEvaluator(DatasetEvaluator):
     """
     Evaluate object proposal, instance detection/segmentation, keypoint detection
     outputs using COCO's metrics and APIs.

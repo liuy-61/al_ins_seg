@@ -27,7 +27,7 @@ from liuy.utils.Liuy_loss import LiuyTensorboardXWriter
 from detectron2.engine import hooks
 import liuy.utils.liuy_cityscapes_evaluation
 from liuy.utils.LiuyBuildLoader import build_detection_train_loader, build_detection_test_loader
-from liuy.utils.liuy_coco_evaluation import COCOEvaluator
+from liuy.utils.liuy_coco_evaluation import Liuy_COCOEvaluator
 class LiuyCoCoTrainer(SimpleTrainer):
     def __init__(self, cfg, model=None, data_loader=None):
 
@@ -311,7 +311,8 @@ class LiuyCoCoTrainer(SimpleTrainer):
                 )
             )
         if evaluator_type in ["coco", "coco_panoptic_seg"]:
-            evaluator_list.append(COCOEvaluator(dataset_name, cfg, True, output_folder))
+            # evaluator_list.append(COCOEvaluator(dataset_name, cfg, True, output_folder))
+            evaluator_list.append(Liuy_COCOEvaluator(dataset_name, cfg, True, output_folder))
         if evaluator_type == "coco_panoptic_seg":
             evaluator_list.append(COCOPanopticEvaluator(dataset_name, output_folder))
         if evaluator_type == "cityscapes":

@@ -192,6 +192,7 @@ class COCOeval:
         if p.iouType == 'segm':
             g = [g['segmentation'] for g in gt]
             d = [d['segmentation'] for d in dt]
+            debug = 1
         elif p.iouType == 'bbox':
             g = [g['bbox'] for g in gt]
             d = [d['bbox'] for d in dt]
