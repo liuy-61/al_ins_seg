@@ -65,53 +65,6 @@ class CoCoSegModel():
         self.trainer.train()
         self.save_model(iter_num=iter_num)
 
-    def fit_on_subset2(self, data_loader, iter_num, reset_model=True):
-        if self.resume_or_load:
-            self.trainer.resume_or_load()
-        if reset_model:
-            # self.model =
-            del self.model
-            del self.trainer
-            self.model = self.model.to(self.device)
-            self.trainer.model = LiuyCoCoTrainer.build_model(self.cfg).to(self.device)
-        self.trainer.data_loader = data_loader
-        self.trainer._data_loader_iter = iter(data_loader)
-        self.trainer.train()
-        self.save_model(iter_num=iter_num)
-
-    def fit_on_subset3(self, data_loader, iter_num, reset_model=True):
-        if self.resume_or_load:
-            self.trainer.resume_or_load()
-        if reset_model:
-            del self.trainer.model
-            self.trainer.model = LiuyCoCoTrainer.build_model(self.cfg).to(self.device)
-            self.trainer.model.train()
-
-            del self.trainer.optimizer
-            self.trainer.optimizer = LiuyCoCoTrainer.build_optimizer(self.cfg, self.trainer.model)
-
-            self.trainer.data_loader = data_loader
-            self.trainer._data_loader_iter = iter(data_loader)
-
-            # if comm.get_world_size() > 1:
-            #     self.trainer.model = DistributedDataParallel(
-            #         self.trainer.model, device_ids=[comm.get_local_rank()], broadcast_buffers=False
-            #     )
-            del self.trainer.scheduler
-            self.trainer.scheduler = LiuyCoCoTrainer.build_lr_scheduler(self.cfg, self.trainer.optimizer)
-
-            del self.trainer.checkpointer
-            self.trainer.checkpointer = DetectionCheckpointer(
-                self.trainer.model,
-                self.cfg.OUTPUT_DIR,
-                optimizer=self.trainer.optimizer,
-                scheduler=self.trainer.scheduler
-            )
-            self.trainer.start_iter = 0
-            self.trainer.max_iter = self.cfg.SOLVER.MAX_ITER
-            self.trainer.register_hooks(self.trainer.build_hooks())
-        self.trainer.train()
-        self.save_model(iter_num=iter_num)
 
     def test(self):
         """
