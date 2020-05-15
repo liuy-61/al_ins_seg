@@ -16,7 +16,7 @@ from liuy.utils.torch_utils import OUTPUT_DIR
 from liuy.utils.LiuyCoCoTrainer import LiuyCoCoTrainer
 from liuy.utils.ComputeLoss import LiuyComputeLoss
 from liuy.utils.LiuyTrainer import LiuyTrainer
-
+from liuy.utils.LiuyFeatureGetter import LiuyFeatureGetter
 # the  config file of the model
 MODEL_NAME = {
     'Faster_RCNN': '/home/tangyp/liuy/detectron2_origin/configs/COCO-Detection/faster_rcnn_R_50_C4_1x.yaml',
@@ -97,7 +97,12 @@ class CoCoSegModel():
         use the json_file & image_root to build data_loader and then extract mask_features from it
         :return: a list of tensors, the tensors shape is (M,C,output_size,output_size)
         """
-        pass
+        register_coco_instances('dataset_name', json_file, image_root)
+        cfg = copy.deepcopy(self.cfg)
+        cfg.DATASETS.TRAIN = ["dataset_name"]
+        model = copy.deepcopy(self.model)
+        getter = LiuyFeatureGetter(cfg, model)
+        return getter.get_feature()
 
     def predict_proba(self, json_file, image_root, conf_thres=0.7, nms_thres=0.4,
                       verbose=True, **kwargs):
@@ -199,10 +204,11 @@ if __name__ == "__main__":
                      'image_root': '/media/tangyp/Data/coco/val2014'
                  }]
     args = default_argument_parser().parse_args()
-    seg_model = CoCoSegModel(args, project_id='random_100', coco_data=coco_data, resume_or_load=True)
+    seg_model = CoCoSegModel(args, project_id='debug', coco_data=coco_data, resume_or_load=True)
+    seg_model.get_mask_features(json_file=coco_data[0]['json_file'], image_root=coco_data[0]['image_root'])
     # seg_model.fit()
-    # seg_model.trainer.resume_or_load()
-    seg_model.test()
+    # # seg_model.trainer.resume_or_load()
+    # seg_model.test()
     # miou=seg_model.test()
     # model.predict()
     #prediction = model.predict_proba(coco_data[1]['json_file'], coco_data[1]['image_root'])
