@@ -205,7 +205,7 @@ if __name__ == "__main__":
                  }]
     args = default_argument_parser().parse_args()
     seg_model = CoCoSegModel(args, project_id='debug', coco_data=coco_data, resume_or_load=True)
-    seg_model.get_mask_features(json_file=coco_data[0]['json_file'], image_root=coco_data[0]['image_root'])
+    seg_model.get_mask_features(json_file=coco_data[1]['json_file'], image_root=coco_data[1]['image_root'])
     # seg_model.fit()
     # # seg_model.trainer.resume_or_load()
     # seg_model.test()

@@ -423,6 +423,47 @@ class Res5ROIHeads(ROIHeads):
             pred_instances = self.forward_with_given_boxes(features, pred_instances)
             return pred_instances, {}
 
+    def get_mask_feature(self, images, features, proposals, targets=None):
+        """
+        a part of self.forward fun
+        :return: mask_feature , a tensor of shape(M, C, out_put_size, out_put_size)
+        """
+        del images
+
+        if self.training:
+            proposals = self.label_and_sample_proposals(proposals, targets)
+        del targets
+
+        proposal_boxes = [x.proposal_boxes for x in proposals]
+        box_features = self._shared_roi_transform(
+            [features[f] for f in self.in_features], proposal_boxes
+        )
+        feature_pooled = box_features.mean(dim=[2, 3])  # pooled to 1x1
+        pred_class_logits, pred_proposal_deltas = self.box_predictor(feature_pooled)
+        del feature_pooled
+
+        outputs = FastRCNNOutputs(
+            self.box2box_transform,
+            pred_class_logits,
+            pred_proposal_deltas,
+            proposals,
+            self.smooth_l1_beta,
+        )
+
+        if self.training:
+            del features
+            losses = outputs.losses()
+            if self.mask_on:
+                proposals, fg_selection_masks = select_foreground_proposals(
+                    proposals, self.num_classes
+                )
+                # Since the ROI feature transform is shared between boxes and masks,
+                # we don't need to recompute features. The mask loss is only defined
+                # on foreground proposals, so we need to select out the foreground
+                # features.
+                mask_features = box_features[torch.cat(fg_selection_masks, dim=0)]
+                return mask_features
+
     def forward_with_given_boxes(self, features, instances):
         """
         Use the given boxes in `instances` to produce other (non-box) per-ROI outputs.

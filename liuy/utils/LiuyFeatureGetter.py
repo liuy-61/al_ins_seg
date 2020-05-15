@@ -197,7 +197,7 @@ class SimpleFeatureGetter(FeatureGetterBase):
             If your want to do something with the losses, you can wrap the model.
             """
             assert len(data) == 1, 'batch_size is not 1'
-            feature_dict = {'image_id': data[0]['image_id'], 'featurea_tensor': self.model.get_mask_feature()}
+            feature_dict = {'image_id': data[0]['image_id'], 'featurea_tensor': self.model.get_mask_feature(data)}
 
             return feature_dict
 

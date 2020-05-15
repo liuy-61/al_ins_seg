@@ -92,6 +92,41 @@ class GeneralizedRCNN(nn.Module):
         losses.update(proposal_losses)
         return losses
 
+    def get_mask_feature(self, batched_inputs):
+        """
+            a part of self.forward function, the args meaning see above forward function
+             :return: mask_feature , a tensor of shape(M, C, out_put_size, out_put_size) M is total number of the mask
+             corresponding  image from batched_inputs ( the batch size is 1 )
+
+        """
+        if not self.training:
+            return self.inference(batched_inputs)
+
+        images = self.preprocess_image(batched_inputs)
+        if "instances" in batched_inputs[0]:
+            gt_instances = [x["instances"].to(self.device) for x in batched_inputs]
+        elif "targets" in batched_inputs[0]:
+            log_first_n(
+                logging.WARN, "'targets' in the model inputs is now renamed to 'instances'!", n=10
+            )
+            gt_instances = [x["targets"].to(self.device) for x in batched_inputs]
+        else:
+            gt_instances = None
+
+        features = self.backbone(images.tensor)
+
+        if self.proposal_generator:
+            proposals, proposal_losses = self.proposal_generator(images, features, gt_instances)
+            mask_features = self.roi_heads.get_mask_feature(images, features, proposals, gt_instances)
+            return mask_features
+        else:
+            assert "proposals" in batched_inputs[0]
+            proposals = [x["proposals"].to(self.device) for x in batched_inputs]
+            proposal_losses = {}
+            mask_features = self.roi_heads.get_mask_feature(images, features, proposals, gt_instances)
+            return mask_features
+
+
     def inference(self, batched_inputs, detected_instances=None, do_postprocess=True):
         """
         Run inference on the given inputs.
