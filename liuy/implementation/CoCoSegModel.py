@@ -89,7 +89,14 @@ class CoCoSegModel():
         computer = LiuyComputeLoss(cfg, model)
         return computer.compute()
 
-    def compute_features(self, json_file, image_root):
+    def get_mask_features(self, json_file, image_root):
+        """
+
+        :param json_file:  coco data's json_file
+        :param image_root: coco data's image_root
+        use the json_file & image_root to build data_loader and then extract mask_features from it
+        :return: a list of tensors, the tensors shape is (M,C,output_size,output_size)
+        """
         pass
 
     def predict_proba(self, json_file, image_root, conf_thres=0.7, nms_thres=0.4,

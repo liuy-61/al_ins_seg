@@ -162,9 +162,6 @@ class LiuyCoCoTrainer(SimpleTrainer):
             return self._last_eval_results
 
 
-
-
-
     @classmethod
     def build_model(cls, cfg):
         """
