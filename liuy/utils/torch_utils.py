@@ -2,7 +2,7 @@ import torch
 import os
 import pickle
 
-OUTPUT_DIR = '/media/tangyp/Data/model_file/OUTPUT_DIR'
+from liuy.utils.local_cofig import OUTPUT_DIR
 # from liuy.implementation.InsSegModel import OUTPUT_DIR
 def select_device(device='', apex=False):
     # device = 'cpu' or '0' or '0,1,2,3'
@@ -31,8 +31,9 @@ def select_device(device='', apex=False):
 def load_prj_model(project_id):
     """Read existed project model or init a new model."""
     device = select_device()
-    if os.path.exists(os.path.join(OUTPUT_DIR, project_id + '_model.pkl')):
-        with open(os.path.join(OUTPUT_DIR, project_id + '_model.pkl'), 'rb') as f:
+    detail_output_dir = os.path.join(OUTPUT_DIR, 'project_' + project_id)
+    if os.path.exists(os.path.join(detail_output_dir, project_id + '_model.pkl')):
+        with open(os.path.join(detail_output_dir, project_id + '_model.pkl'), 'rb') as f:
             model_ft = pickle.load(f)
     else:
         return None, device

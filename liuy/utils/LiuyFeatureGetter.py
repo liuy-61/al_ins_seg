@@ -187,7 +187,7 @@ class SimpleFeatureGetter(FeatureGetterBase):
         # assert self.model.training, "[SimpleFeatureGetter] model was changed to eval mode!"
         start = time.perf_counter()
         """
-        If your want to do something with the data, you can wrap the dataloader.
+        If your want to do something with the data, you can wrap the data loader.
         return a dict 'image_id' is the feature's corresponding image' index
         """
         data = next(self._data_loader_iter)
@@ -197,8 +197,7 @@ class SimpleFeatureGetter(FeatureGetterBase):
             If your want to do something with the losses, you can wrap the model.
             """
             assert len(data) == 1, 'batch_size is not 1'
-            feature_dict = {'image_id': data[0]['image_id'], 'featurea_tensor': self.model.get_mask_feature(data)}
-
+            feature_dict = {'image_id': data[0]['image_id'], 'feature_tensor': self.model.get_mask_feature(data)}
             return feature_dict
 
 

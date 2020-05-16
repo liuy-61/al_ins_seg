@@ -17,12 +17,9 @@ from liuy.utils.LiuyCoCoTrainer import LiuyCoCoTrainer
 from liuy.utils.ComputeLoss import LiuyComputeLoss
 from liuy.utils.LiuyTrainer import LiuyTrainer
 from liuy.utils.LiuyFeatureGetter import LiuyFeatureGetter
+from liuy.utils.local_cofig import coco_data,debug_data,MODEL_NAME
 # the  config file of the model
-MODEL_NAME = {
-    'Faster_RCNN': '/home/tangyp/liuy/detectron2_origin/configs/COCO-Detection/faster_rcnn_R_50_C4_1x.yaml',
 
-    'Mask_RCNN': '/home/tangyp/liuy/detectron2_origin/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_3x.yaml'
-    }
 
 __all__ = ['CoCoSegModel',
            ]
@@ -159,11 +156,12 @@ class CoCoSegModel():
         # return results
 
     def save_model(self, iter_num=None):
+        detail_output_dir = os.path.join(OUTPUT_DIR, 'project_' + self.project_id)
         if iter_num is not None:
-            with open(os.path.join(OUTPUT_DIR, self.project_id + "_model" + str(iter_num) + ".pkl"), 'wb') as f:
+            with open(os.path.join(detail_output_dir, self.project_id + "_model" + str(iter_num) + ".pkl"), 'wb') as f:
                 pickle.dump(self.trainer.model, f)
         else:
-            with open(os.path.join(OUTPUT_DIR, self.project_id + "_model" + ".pkl"), 'wb') as f:
+            with open(os.path.join(detail_output_dir, self.project_id + "_model" + ".pkl"), 'wb') as f:
                 pickle.dump(self.trainer.model, f)
 
 def setup(args, project_id, coco_data, train_size=None):
@@ -177,7 +175,7 @@ def setup(args, project_id, coco_data, train_size=None):
     cfg.SOLVER.BASE_LR = 0.00025
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
     cfg.MODEL.MASK_ON = True
-    cfg.OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'project' + project_id)
+    cfg.OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'project_' + project_id)
     register_coco_instances(name='coco_train', json_file=coco_data[0]['json_file'],
                             image_root=coco_data[0]['image_root'])
     register_coco_instances(name='coco_val', json_file=coco_data[1]['json_file'], image_root=coco_data[1]['image_root'])
@@ -193,19 +191,11 @@ def setup(args, project_id, coco_data, train_size=None):
 
 
 if __name__ == "__main__":
-    coco_data = [{
-                    'json_file': '/media/tangyp/Data/coco/annotations/instances_train2014.json',
-                  # 'json_file': '/media/tangyp/Data/coco/annotations/sub_train2014.json',
-                  'image_root': '/media/tangyp/Data/coco/train2014'
-                  },
-                 {
-                     # 'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
-                     'json_file': '/media/tangyp/Data/coco/annotations/sub_val2014.json',
-                     'image_root': '/media/tangyp/Data/coco/val2014'
-                 }]
+
     args = default_argument_parser().parse_args()
     seg_model = CoCoSegModel(args, project_id='debug', coco_data=coco_data, resume_or_load=True)
-    seg_model.get_mask_features(json_file=coco_data[1]['json_file'], image_root=coco_data[1]['image_root'])
+    # seg_model.save_model()
+    # seg_model.get_mask_features(json_file=debug_data[0]['json_file'], image_root=debug_data[0]['image_root'])
     # seg_model.fit()
     # # seg_model.trainer.resume_or_load()
     # seg_model.test()

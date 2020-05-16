@@ -6,7 +6,8 @@ class BaseSampler(metaclass=ABCMeta):
     def __init__(self, sampler_name, data_loader, **kwargs):
         """
 
-        :param data_loader: we use the data_loader to init a  image_id_list, then we select data from image_id_list.
+        :param data_loader: we use the data_loader to init a  image_id_list,
+        then we select data from image_id_list.
         :param sampler_name
         :param kwargs:
         """
