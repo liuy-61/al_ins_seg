@@ -19,20 +19,10 @@ from detectron2.data import (
     build_detection_test_loader,
     build_detection_train_loader,
 )
-from detectron2.evaluation import (
-    DatasetEvaluator,
-    inference_on_dataset,
-    print_csv_format,
-    verify_results,
-    SemSegEvaluator, COCOPanopticEvaluator, COCOEvaluator, CityscapesEvaluator, PascalVOCDetectionEvaluator,
-    LVISEvaluator, DatasetEvaluators)
-from detectron2.modeling import build_model, GeneralizedRCNNWithTTA
-from detectron2.solver import build_lr_scheduler, build_optimizer
-from detectron2.utils import comm
-from detectron2.utils.events import CommonMetricPrinter, JSONWriter, TensorboardXWriter
-from detectron2.engine import hooks
-import liuy.utils.liuy_cityscapes_evaluation
 
+from detectron2.modeling import build_model, GeneralizedRCNNWithTTA
+from detectron2.engine import hooks
+from liuy.utils.save_mask_feature import save_mask_feature
 
 # -*- coding: utf-8 -*-
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
@@ -94,7 +84,7 @@ class FeatureGetterBase:
             h.trainer = weakref.proxy(self)
         self._hooks.extend(hooks)
 
-    def get_feature(self, start_iter: int, max_iter: int):
+    def get_feature(self, start_iter: int, max_iter: int, project_id=None):
         """
         Args:
             start_iter, max_iter (int): See docs above
@@ -103,6 +93,7 @@ class FeatureGetterBase:
         logger = logging.getLogger(__name__)
         logger.info("Starting getting feature from iteration {}".format(start_iter))
         feature_list = []
+        serial_number = 0
         self.iter = self.start_iter = start_iter
         self.max_iter = max_iter
 
@@ -116,6 +107,15 @@ class FeatureGetterBase:
                     """
                     feature = self.run_step()
                     feature_list.append(feature)
+                    if project_id is not None :
+                        if len(feature_list) == 1000:
+                            save_mask_feature(project_id=project_id, mask_feature=feature_list, serial_number=serial_number)
+                            num = (serial_number + 1) * 1000
+                            print("save {} images' mask feature, "
+                                  "still need compute {} images' mask feature ".format(num, self.max_iter-num))
+                            del feature_list
+                            feature_list = []
+                            serial_number += 1
                     self.after_step()
             finally:
                 self.after_train()
@@ -247,13 +247,15 @@ class LiuyFeatureGetter(SimpleFeatureGetter):
 
         return ret
 
-    def get_feature(self):
+    def get_feature(self, project_id=None):
         """
-
+        project_id: to avoid out of memory  we save the feature part by part ,
+        and the project_id is used to compute the path to save
         Returns:
             OrderedDict of results,
         """
-        feature = super().get_feature(self.start_iter, self.max_iter)
+
+        feature = super().get_feature(self.start_iter, self.max_iter, project_id=project_id)
         return feature
 
     @classmethod

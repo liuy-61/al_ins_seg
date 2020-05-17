@@ -92,14 +92,15 @@ class CoCoSegModel():
         :param json_file:  coco data's json_file
         :param image_root: coco data's image_root
         use the json_file & image_root to build data_loader and then extract mask_features from it
-        :return: a list of tensors, the tensors shape is (M,C,output_size,output_size)
+        :return: a list of dict, dict :{'image_id':int, 'feature_tensor':tensor}
+        the tensors shape is (M,C,output_size,output_size)
         """
         register_coco_instances('dataset_name', json_file, image_root)
         cfg = copy.deepcopy(self.cfg)
         cfg.DATASETS.TRAIN = ["dataset_name"]
         model = copy.deepcopy(self.model)
         getter = LiuyFeatureGetter(cfg, model)
-        return getter.get_feature()
+        return getter.get_feature(self.project_id)
 
     def predict_proba(self, json_file, image_root, conf_thres=0.7, nms_thres=0.4,
                       verbose=True, **kwargs):
