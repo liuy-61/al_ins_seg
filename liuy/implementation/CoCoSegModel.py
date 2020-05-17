@@ -43,7 +43,7 @@ class CoCoSegModel():
         if self.model is None:
             self.model = LiuyCoCoTrainer.build_model(self.cfg)
             self.model = self.model.to(self.device)
-            print("Initialize a pre-trained model for project{}".format(project_id))
+            print("Initialize a pre-trained model for project {}".format(project_id))
         else:
             print("load project {} model from file".format(project_id))
         self.trainer = LiuyCoCoTrainer(self.cfg, self.model)

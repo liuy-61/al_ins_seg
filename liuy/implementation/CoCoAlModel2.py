@@ -1,6 +1,7 @@
 from detectron2.engine import default_argument_parser
 from liuy.implementation.CoCoSegModel import CoCoSegModel
 from liuy.implementation.RandomSampler import CoCoRandomSampler
+from liuy.implementation.CoresetSampler import CoreSetSampler
 import numpy as np
 import random
 from liuy.utils.reg_dataset import register_a_cityscapes_from_selected_image_files, \
@@ -98,8 +99,11 @@ def train_on_batch(args, project_id, coco_data, resume_or_load, seed_batch, batc
                 resume_or_load=resume_or_load
             )
             data_loader = ins_seg_model.trainer.data_loader
-
-            sampler = CoCoRandomSampler('random_sampler', data_loader)
+            mask_feature = ins_seg_model.get_mask_features(json_file=coco_data[0]['json_file'],
+                                                           image_root=coco_data[0]['image_root'])
+            """ init sampler"""
+            # sampler = CoCoRandomSampler('random_sampler', data_loader)
+            sampler = CoreSetSampler('coreset_sampler', mask_feature)
 
             n_sample = min(batch_size, whole_train_size - len(selected_image_files))
             start_time = int(time.time())
@@ -129,7 +133,7 @@ def train_on_batch(args, project_id, coco_data, resume_or_load, seed_batch, batc
 
 if __name__ == "__main__":
     args = default_argument_parser().parse_args()
-    project_id = 'debug'
+    project_id = 'debug_coreset'
     # train_seed(args=args, project_id=project_id, coco_data=debug_data, resume_or_load=True, seed_batch=100)
     train_on_batch(args=args, project_id=project_id, coco_data=debug_data,
                    resume_or_load=True, seed_batch=100, batch_size=100)

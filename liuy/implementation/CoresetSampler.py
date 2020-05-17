@@ -13,16 +13,18 @@ def cross_correlation(feature1, feature2):
     """
         compute the cross correlation (M * N) times,compute the every mask features between tow images
     """
-    M = feature1.sahpe[0]
+    M = feature1.shape[0]
     N = feature2.shape[0]
     sum_similarity = 0
     for i in range(M):
         for j in range(N):
-            sum_similarity += feature1[M] * feature2[N]
+           simlilarity = feature1[i] * feature2[j]
+           simlilarity = torch.sum(simlilarity)
+           sum_similarity += simlilarity
     return sum_similarity / (M*N)
 
 
-class CoreSampler:
+class CoreSetSampler:
     def __init__(self, sampler_name, mask_feature):
         """
         :param sampler_name: custom
@@ -53,7 +55,7 @@ class CoreSampler:
         labeled = self.mask_feature[labeled]
         un_labeled = np.in1d(self.whole_image_id, not_selected)
         un_labeled = self.mask_feature[un_labeled]
-        return self.greedy_k(n_sampel=n_sample, labeled=labeled, un_labeled=un_labeled)
+        return self.greedy_k(n_sampel=n_sample, labeled=labeled, unlabeled=un_labeled)
 
     def greedy_k(self, n_sampel, labeled, unlabeled):
         """
@@ -61,40 +63,64 @@ class CoreSampler:
         :param n_sampel: amount of this batch to select
         :param labeled:  np.array of dict, dict :{'image_id':int, 'feature_tensor':tensor}
         :param unlabeled: np.array of dict, dict :{'image_id':int, 'feature_tensor':tensor}
-        :return: list of image_id you selected this batch
+        :return: greedy_indices: a list of image_id you selected this batch
         """
         greedy_indices = []
         similarity_list = []
-        """ a list of dict,dict : {'image_id': int, 'similarity': scale} , meaning each unlabeled image's
-        similarity to whole labeled image
+        """ a list of dict,dict : {'image_id': int, 'tensor_feature': tensor ,'similarity': scale} , 
+            meaning each unlabeled image's tensor_feature and the similarity to whole labeled image
         """
-
+        # compute similarity between  every unlabeled image and whole labeled images set
         for un in unlabeled:
             similarity = 0
             for la in labeled:
                 correlation = cross_correlation(un['feature_tensor'], la['feature_tensor'])
                 if similarity < correlation:
                     similarity = correlation
-            similarity_dict = {'image_id': un['image_id'], 'similarity': similarity}
+            similarity_dict = {'image_id': un['image_id'], 'feature_tensor': un['feature_tensor'], 'similarity': similarity}
             similarity_list.append(similarity_dict)
 
+        # get the least similar unlabeled image to the whole labeled images set,
+        # add the least similar unlabeled image to greedy_indices,
+        # remove the least similar unlabeled image from unlabeled images set
         least_similar = similarity_list[0]
         for item in similarity_list:
             if least_similar['similarity'] > item['similarity']:
                 least_similar = item
+
         greedy_indices.append(least_similar['image_id'])
+
+        similarity_list.remove(least_similar)
+
+        unlabeled = unlabeled.tolist()
+        unlabeled.remove({'image_id': least_similar['image_id'], 'feature_tensor': least_similar['feature_tensor']})
+        unlabeled = np.array(unlabeled)
 
         for i in range(n_sampel-1):
             for index, un in enumerate(unlabeled):
-                correlation = correlation(un['feature_tensor'], least_similar['feature_tensor'])
+                # compute the similarity between the every unlabeled image
+                # and the least similar unlabeled image last got, if the similarity
+                # is bigger than before update the similarity
+                correlation = cross_correlation(un['feature_tensor'], least_similar['feature_tensor'])
                 if similarity_list[index]['similarity'] < correlation:
                     similarity_list[index]['similarity'] = correlation
 
+            # get the least similar unlabeled image to the whole labeled images set,
+            # add the least similar unlabeled image to greedy_indices,
+            # remove the least similar unlabeled image from unlabeled images set
             least_similar = similarity_list[0]
             for item in similarity_list:
                 if least_similar['similarity'] > item['similarity']:
                     least_similar = item
+
             greedy_indices.append(least_similar['image_id'])
+            print("select {} images, still need {} images".format(i+2, n_sampel-i-2))
+            similarity_list.remove(least_similar)
+
+            unlabeled = unlabeled.tolist()
+            unlabeled.remove({'image_id': least_similar['image_id'], 'feature_tensor': least_similar['feature_tensor']})
+            unlabeled = np.array(unlabeled)
+
 
         assert len(greedy_indices) == n_sampel
         return greedy_indices
@@ -112,5 +138,17 @@ class CoreSampler:
         whole = np.array( [11,22,33,45,67,89,57])
         selected = np.array([11,89,57])
         not_selected = whole[np.logical_not(np.in1d(whole, selected))]
+
+        debug = 1
+
+    if __name__ == '__main__':
+        similarity_list = np.array([{'image_id': 1, 'tensor_feature': 4, 'similarity': 5},
+                           {'image_id': 4, 'tensor_feature': 8, 'similarity': 9}])
+
+        similarity_list = similarity_list.tolist()
+        dict = {'image_id': 4, 'tensor_feature': 8, 'similarity': 9}
+        similarity_list.remove(dict)
+
+        similarity_list = np.array(similarity_list)
 
         debug = 1
