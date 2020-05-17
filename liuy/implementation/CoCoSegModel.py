@@ -193,7 +193,9 @@ def setup(args, project_id, coco_data, train_size=None):
 if __name__ == "__main__":
 
     args = default_argument_parser().parse_args()
-    seg_model = CoCoSegModel(args, project_id='debug', coco_data=coco_data, resume_or_load=True)
+    seg_model = CoCoSegModel(args, project_id='coreset', coco_data=coco_data, resume_or_load=True)
+    mask_feature = seg_model.get_mask_features(json_file=coco_data[0]['json_file'],
+                                                           image_root=coco_data[0]['image_root'])
     # seg_model.save_model()
     # seg_model.get_mask_features(json_file=debug_data[0]['json_file'], image_root=debug_data[0]['image_root'])
     # seg_model.fit()

@@ -462,6 +462,7 @@ class Res5ROIHeads(ROIHeads):
                 # on foreground proposals, so we need to select out the foreground
                 # features.
                 mask_features = box_features[torch.cat(fg_selection_masks, dim=0)]
+                mask_features = mask_features.cpu()
                 return mask_features
 
     def forward_with_given_boxes(self, features, instances):

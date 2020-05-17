@@ -4,7 +4,8 @@ coco_data = [{  'json_file': '/media/tangyp/Data/coco/annotations/instances_trai
                 'image_root': '/media/tangyp/Data/coco/train2014'
              },
              {
-                'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
+                # 'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
+                'json_file': '/media/tangyp/Data/coco/annotations/sub_val2014.json',
                 'image_root': '/media/tangyp/Data/coco/val2014'
               },
             ]
