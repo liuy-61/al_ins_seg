@@ -86,13 +86,15 @@ class CoCoSegModel():
         computer = LiuyComputeLoss(cfg, model)
         return computer.compute()
 
-    def get_mask_features(self, json_file, image_root):
+    def save_mask_features(self, json_file, image_root, selected_image_file):
         """
 
+        :param selected_image_file: a list of image id,when save mask features we split
+        selected and unselected images' mask feature
         :param json_file:  coco data's json_file
         :param image_root: coco data's image_root
         use the json_file & image_root to build data_loader and then extract mask_features from it
-        :return: a list of dict, dict :{'image_id':int, 'feature_tensor':tensor}
+        a list of dict, dict :{'image_id':int, 'feature_tensor':tensor}
         the tensors shape is (M,C,output_size,output_size)
         """
         register_coco_instances('dataset_name', json_file, image_root)
@@ -100,7 +102,7 @@ class CoCoSegModel():
         cfg.DATASETS.TRAIN = ["dataset_name"]
         model = copy.deepcopy(self.model)
         getter = LiuyFeatureGetter(cfg, model)
-        return getter.get_feature(self.project_id)
+        getter.save_feature(self.project_id, selected_image_file=selected_image_file)
 
     def predict_proba(self, json_file, image_root, conf_thres=0.7, nms_thres=0.4,
                       verbose=True, **kwargs):
@@ -195,8 +197,9 @@ if __name__ == "__main__":
 
     args = default_argument_parser().parse_args()
     seg_model = CoCoSegModel(args, project_id='coreset', coco_data=coco_data, resume_or_load=True)
-    mask_feature = seg_model.get_mask_features(json_file=coco_data[0]['json_file'],
-                                                           image_root=coco_data[0]['image_root'])
+    seg_model.save_mask_features(json_file=coco_data[0]['json_file'],
+                                 image_root=coco_data[0]['image_root'],
+                                 selected_image_file=[])
     # seg_model.save_model()
     # seg_model.get_mask_features(json_file=debug_data[0]['json_file'], image_root=debug_data[0]['image_root'])
     # seg_model.fit()

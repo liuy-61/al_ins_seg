@@ -1,4 +1,4 @@
-from detectron2.engine.train_loop import  HookBase
+from detectron2.engine.train_loop import HookBase
 # from detectron2.reg_dataset1 import get_custom_dicts
 from detectron2.utils import comm
 from torch.nn.parallel import DistributedDataParallel
@@ -37,7 +37,6 @@ import detectron2.utils.comm as comm
 from detectron2.utils.events import EventStorage
 
 __all__ = ["FeatureGetterBase"]
-
 
 """
     FeatureGetterBase imitate the class TrainerBase in train_loop.py
@@ -84,16 +83,25 @@ class FeatureGetterBase:
             h.trainer = weakref.proxy(self)
         self._hooks.extend(hooks)
 
-    def get_feature(self, start_iter: int, max_iter: int, project_id=None):
+    def save_feature(self, start_iter: int, max_iter: int, project_id=None, selected_image_file=None):
         """
         Args:
             start_iter, max_iter (int): See docs above
             return a list of dict, dict :{'image_id':int, 'feature_tensor':tensor}
+            to avoid out of memory, we save the feature_list as file,
+            and the project_id is used to get the path where to save,
+            selected_image_file : a list of image id, it is used to split the selected images' mask feature
+            and unselected images' mask feature
+
         """
         logger = logging.getLogger(__name__)
         logger.info("Starting getting feature from iteration {}".format(start_iter))
-        feature_list = []
-        serial_number = 0
+
+        selected_feature_list = []
+        unselected_feature_list = []
+        selected_serial_number = 0
+        unselected_serial_number = 0
+
         self.iter = self.start_iter = start_iter
         self.max_iter = max_iter
 
@@ -106,20 +114,49 @@ class FeatureGetterBase:
                     in self.run step do what is diff
                     """
                     feature = self.run_step()
-                    feature_list.append(feature)
-                    if project_id is not None :
-                        if len(feature_list) == 1000:
-                            save_mask_feature(project_id=project_id, mask_feature=feature_list, serial_number=serial_number)
-                            num = (serial_number + 1) * 1000
-                            print("save {} images' mask feature, "
-                                  "still need compute {} images' mask feature ".format(num, self.max_iter-num))
-                            del feature_list
-                            feature_list = []
-                            serial_number += 1
+                    if project_id is not None and selected_image_file is not None:
+
+                        if feature['image_id'] in selected_image_file:
+                            selected_feature_list.append(feature)
+                            if len(selected_feature_list) == 1000:
+                                save_mask_feature(project_id=project_id, mask_feature=selected_feature_list,
+                                                  serial_number=selected_serial_number, selected_or_not=True)
+
+                                selected_serial_number += 1
+                                num = selected_serial_number * 1000 + unselected_serial_number * 1000
+                                print("save {}  images' mask feature, still need {} images' feature to save "
+                                      .format(num, self.max_iter-num))
+                                del selected_feature_list
+                                selected_feature_list = []
+
+                        else:
+                            unselected_feature_list.append(feature)
+                            if len(unselected_feature_list) == 1000:
+                                save_mask_feature(project_id=project_id, mask_feature=unselected_feature_list,
+                                                  serial_number=unselected_serial_number, selected_or_not=False)
+
+                                unselected_serial_number += 1
+                                num = selected_serial_number * 1000 + unselected_serial_number * 1000
+                                print("save {}  images' mask feature, still need {} images' feature to save "
+                                      .format(num, self.max_iter - num))
+                                del unselected_feature_list
+                                unselected_feature_list = []
+
+
                     self.after_step()
             finally:
                 self.after_train()
-        return feature_list
+                if len(selected_feature_list) > 0:
+                    save_mask_feature(project_id=project_id, mask_feature=selected_feature_list,
+                                      serial_number=selected_serial_number, selected_or_not=True)
+                    selected_serial_number += 1
+
+                if len(unselected_feature_list) > 0:
+                    save_mask_feature(project_id=project_id, mask_feature=unselected_feature_list,
+                                      serial_number=unselected_serial_number, selected_or_not=False)
+
+                    unselected_serial_number += 1
+
 
     def before_train(self):
         for h in self._hooks:
@@ -179,7 +216,6 @@ class SimpleFeatureGetter(FeatureGetterBase):
         self.data_loader = data_loader
         self._data_loader_iter = iter(data_loader)
 
-
     def run_step(self):
         """
         Implement the standard getting feature logic described above.
@@ -215,8 +251,6 @@ class LiuyFeatureGetter(SimpleFeatureGetter):
         self.start_iter = 0
         self.register_hooks(self.build_hooks())
 
-
-
     def build_hooks(self):
         """
         Build a list of default hooks, including timing, evaluation,
@@ -247,7 +281,7 @@ class LiuyFeatureGetter(SimpleFeatureGetter):
 
         return ret
 
-    def get_feature(self, project_id=None):
+    def save_feature(self, project_id=None, selected_image_file=None):
         """
         project_id: to avoid out of memory  we save the feature part by part ,
         and the project_id is used to compute the path to save
@@ -255,7 +289,8 @@ class LiuyFeatureGetter(SimpleFeatureGetter):
             OrderedDict of results,
         """
 
-        feature = super().get_feature(self.start_iter, self.max_iter, project_id=project_id)
+        feature = super().save_feature(self.start_iter, self.max_iter, project_id=project_id,
+                                       selected_image_file=selected_image_file)
         return feature
 
     @classmethod
@@ -282,4 +317,3 @@ class LiuyFeatureGetter(SimpleFeatureGetter):
         Overwrite it if you'd like a different data loader.
         """
         return build_detection_train_loader(cfg)
-

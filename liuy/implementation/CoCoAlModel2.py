@@ -99,8 +99,8 @@ def train_on_batch(args, project_id, coco_data, resume_or_load, seed_batch, batc
                 resume_or_load=resume_or_load
             )
             data_loader = ins_seg_model.trainer.data_loader
-            mask_feature = ins_seg_model.get_mask_features(json_file=coco_data[0]['json_file'],
-                                                           image_root=coco_data[0]['image_root'])
+            mask_feature = ins_seg_model.save_mask_features(json_file=coco_data[0]['json_file'],
+                                                            image_root=coco_data[0]['image_root'])
             """ init sampler"""
             # sampler = CoCoRandomSampler('random_sampler', data_loader)
             sampler = CoreSetSampler('coreset_sampler', mask_feature)

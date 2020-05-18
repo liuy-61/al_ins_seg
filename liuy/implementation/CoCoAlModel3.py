@@ -1,7 +1,8 @@
 from detectron2.engine import default_argument_parser
 from liuy.implementation.CoCoSegModel import CoCoSegModel
 from liuy.implementation.RandomSampler import CoCoRandomSampler
-from liuy.implementation.CoresetSampler import CoreSetSampler
+from liuy.implementation.CoresetSamplerV2 import CoreSetSampler
+# from liuy.implementation.CoresetSampler import CoreSetSampler
 import numpy as np
 import random
 from liuy.utils.reg_dataset import register_a_cityscapes_from_selected_image_files, \
@@ -72,15 +73,18 @@ def train_seed(args, project_id, coco_data, resume_or_load, seed_batch, batch_si
 
         """ use the trained model to get features 
         """
-        mask_feature = ins_seg_model.get_mask_features(json_file=coco_data[0]['json_file'],
-                                                           image_root=coco_data[0]['image_root'])
+        ins_seg_model.save_mask_features(json_file=coco_data[0]['json_file'],
+                                        image_root=coco_data[0]['image_root'],
+                                        selected_image_file=selected_image_files
+                                                        )
 
+        whole_image_id_list = read_img_list(project_id=project_id, iteration=100)
         """ init sampler """
-        sampler = CoreSetSampler('coreset_sampler', mask_feature)
+        sampler = CoreSetSampler('coreset_sampler', project_id=project_id, whole_image_id_list=whole_image_id_list)
 
         n_sample = min(batch_size, whole_train_size - len(selected_image_files))
         start_time = int(time.time())
-        new_batch = sampler.select_batch(n_sample, already_selected=selected_image_files)
+        new_batch = sampler.select_batch(n_sample)
         end_time = int(time.time())
         print("select batch using " + str(end_time - start_time) + "s")
 
@@ -126,23 +130,25 @@ def train_on_batch(args, project_id, coco_data, resume_or_load, seed_batch, batc
             data_loader_from_selected_image_files, l = ins_seg_model.trainer.re_build_train_loader(
                 'coco_from_selected_image')
 
-            ins_seg_model.fit_on_subset(data_loader_from_selected_image_files, iter_num=iter_num)
+            ins_seg_model.save_mask_features(json_file=coco_data[0]['json_file'],
+                                             image_root=coco_data[0]['image_root'],
+                                             selected_image_file=selected_image_files
+                                             )
 
-            mask_feature = ins_seg_model.get_mask_features(json_file=coco_data[0]['json_file'],
-                                                           image_root=coco_data[0]['image_root'])
-            """ init sampler"""
-            sampler = CoreSetSampler('coreset_sampler', mask_feature)
+            whole_image_id_list = read_img_list(project_id=project_id, iteration=100)
+            """ init sampler """
+            sampler = CoreSetSampler('coreset_sampler', project_id=project_id, whole_image_id_list=whole_image_id_list)
 
             n_sample = min(batch_size, whole_train_size - len(selected_image_files))
             start_time = int(time.time())
-            new_batch = sampler.select_batch(n_sample, already_selected=selected_image_files)
+            new_batch = sampler.select_batch(n_sample)
             end_time = int(time.time())
             print("select batch using " + str(end_time - start_time) + "s")
-            print("selected {} new images for iter {} ".format(n_sample, n+1))
+            print("selected {} new images for iter {} ".format(n_sample, n + 1))
             selected_image_files.extend(new_batch)
 
-            save_img_list(project_id=project_id, iteration=n+1, img_id_list=selected_image_files)
-            print("save {} images id list for iter {}".format(len(selected_image_files), n+1))
+            save_img_list(project_id=project_id, iteration=n + 1, img_id_list=selected_image_files)
+            print("save {} images id list for iter {}".format(len(selected_image_files), n + 1))
             print('in {} iter'.format(n))
 
 
