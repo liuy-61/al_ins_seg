@@ -10,6 +10,7 @@ from liuy.utils.reg_dataset import register_a_cityscapes_from_selected_image_fil
 from liuy.utils.img_list import save_img_list, read_img_list, get_iter
 import time
 from liuy.utils.local_cofig import coco_data, debug_data, OUTPUT_DIR
+from liuy.implementation.LossSampler import LossSampler
 import os
 
 
@@ -71,20 +72,17 @@ def train_seed(args, project_id, coco_data, resume_or_load, seed_batch, batch_si
 
         ins_seg_model.fit_on_subset(data_loader_from_selected_image_files, iter_num=0)
 
-        """ use the trained model to get features 
+        """ use the trained model to get losses  
         """
-        ins_seg_model.save_mask_features(json_file=coco_data[0]['json_file'],
-                                        image_root=coco_data[0]['image_root'],
-                                        selected_image_file=selected_image_files
-                                                        )
+        losses = ins_seg_model.compute_loss(json_file=coco_data[0]['json_file'], image_root=coco_data[0]['image_root'])
 
         whole_image_id_list = read_img_list(project_id=project_id, iteration=100)
         """ init sampler """
-        sampler = CoreSetSampler('coreset_sampler', project_id=project_id, whole_image_id_list=whole_image_id_list)
 
+        sampler = LossSampler(sampler_name='increase_loss')
         n_sample = min(batch_size, whole_train_size - len(selected_image_files))
         start_time = int(time.time())
-        new_batch = sampler.select_batch(n_sample)
+        new_batch = sampler.select_batch(n_sample,already_selected=selected_image_files,losses=losses,loss_decrease=False)
         end_time = int(time.time())
         print("select batch using " + str(end_time - start_time) + "s")
 
@@ -130,21 +128,20 @@ def train_on_batch(args, project_id, coco_data, resume_or_load, seed_batch, batc
             data_loader_from_selected_image_files, l = ins_seg_model.trainer.re_build_train_loader(
                 'coco_from_selected_image')
 
-            ins_seg_model.save_mask_features(json_file=coco_data[0]['json_file'],
-                                             image_root=coco_data[0]['image_root'],
-                                             selected_image_file=selected_image_files
-                                             )
+            losses = ins_seg_model.compute_loss(json_file=coco_data[0]['json_file'],
+                                                image_root=coco_data[0]['image_root'])
 
             whole_image_id_list = read_img_list(project_id=project_id, iteration=100)
             """ init sampler """
-            sampler = CoreSetSampler('coreset_sampler', project_id=project_id, whole_image_id_list=whole_image_id_list)
 
+            sampler = LossSampler(sampler_name='increase_loss')
             n_sample = min(batch_size, whole_train_size - len(selected_image_files))
             start_time = int(time.time())
-            new_batch = sampler.select_batch(n_sample)
+            new_batch = sampler.select_batch(n_sample, already_selected=selected_image_files, losses=losses,
+                                             loss_decrease=False)
             end_time = int(time.time())
             print("select batch using " + str(end_time - start_time) + "s")
-            print("selected {} new images for iter {} ".format(n_sample, n + 1))
+
             selected_image_files.extend(new_batch)
 
             save_img_list(project_id=project_id, iteration=n + 1, img_id_list=selected_image_files)
@@ -154,8 +151,8 @@ def train_on_batch(args, project_id, coco_data, resume_or_load, seed_batch, batc
 
 if __name__ == "__main__":
     args = default_argument_parser().parse_args()
-    project_id = 'debug'
+    project_id = 'increase_loss'
     train_seed(args=args, project_id=project_id, coco_data=coco_data,
-               resume_or_load=True, seed_batch=0.2, batch_size=0.1)
+               resume_or_load=True, seed_batch=50, batch_size=50)
     # train_on_batch(args=args, project_id=project_id, coco_data=coco_data,
     #                resume_or_load=True, seed_batch=100, batch_size=100)
