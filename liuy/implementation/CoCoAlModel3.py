@@ -154,8 +154,8 @@ def train_on_batch(args, project_id, coco_data, resume_or_load, seed_batch, batc
 
 if __name__ == "__main__":
     args = default_argument_parser().parse_args()
-    project_id = 'coreset'
+    project_id = 'debug'
     train_seed(args=args, project_id=project_id, coco_data=coco_data,
-               resume_or_load=True, seed_batch=100, batch_size=100)
+               resume_or_load=True, seed_batch=0.2, batch_size=0.1)
     # train_on_batch(args=args, project_id=project_id, coco_data=coco_data,
     #                resume_or_load=True, seed_batch=100, batch_size=100)
