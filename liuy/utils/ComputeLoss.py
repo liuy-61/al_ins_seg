@@ -105,7 +105,7 @@ class ComputeLossBase:
 
         self.iter = self.start_iter = start_iter
         self.max_iter = max_iter
-
+        loss_cnt = 0
         with EventStorage(start_iter) as self.storage:
             try:
                 self.before_train()
@@ -113,6 +113,9 @@ class ComputeLossBase:
                     self.before_step()
                     loss = self.run_step()
                     losses.append(loss)
+                    loss_cnt += 1
+                    if loss_cnt % 10 == 0:
+                        print("has got {} losses, still need {} ".format(loss_cnt, self.max_iter-loss_cnt))
                     self.after_step()
             finally:
                 self.after_train()
@@ -186,6 +189,7 @@ class SimpleComputeLoss(ComputeLossBase):
         start = time.perf_counter()
         """
         If your want to do something with the data, you can wrap the dataloader.
+        return loss_dict:dict{'loss_mask':tensor, 'image_id':int}
         """
         data = next(self._data_loader_iter)
 
@@ -193,8 +197,10 @@ class SimpleComputeLoss(ComputeLossBase):
             """
             If your want to do something with the losses, you can wrap the model.
             """
-            loss_dict = self.model(data)
-            loss_dict['file_name'] = data[0]['file_name']
+
+            assert len(data) == 1
+            loss_dict = {'loss_mask': self.model(data)['loss_mask'], 'image_id':data[0]['image_id']}
+
             return loss_dict
 
     def _detect_anomaly(self, losses, loss_dict):
@@ -354,8 +360,7 @@ class LiuyComputeLoss(SimpleComputeLoss):
         """
         Run training.
 
-        Returns:
-            OrderedDict of results, if evaluation is enabled. Otherwise None.
+        return a list of dict,dict {'loss_mask':tensor, 'image_id':int}
         """
         losses = super().train(self.start_iter, self.max_iter)
         return losses

@@ -127,10 +127,10 @@ def train_on_batch(args, project_id, coco_data, resume_or_load, seed_batch, batc
             )
             data_loader_from_selected_image_files, l = ins_seg_model.trainer.re_build_train_loader(
                 'coco_from_selected_image')
+            ins_seg_model.fit_on_subset(data_loader_from_selected_image_files, iter_num=iter_num)
 
             losses = ins_seg_model.compute_loss(json_file=coco_data[0]['json_file'],
                                                 image_root=coco_data[0]['image_root'])
-
             whole_image_id_list = read_img_list(project_id=project_id, iteration=100)
             """ init sampler """
 
@@ -152,7 +152,7 @@ def train_on_batch(args, project_id, coco_data, resume_or_load, seed_batch, batc
 if __name__ == "__main__":
     args = default_argument_parser().parse_args()
     project_id = 'increase_loss'
-    train_seed(args=args, project_id=project_id, coco_data=coco_data,
-               resume_or_load=True, seed_batch=50, batch_size=50)
-    # train_on_batch(args=args, project_id=project_id, coco_data=coco_data,
-    #                resume_or_load=True, seed_batch=100, batch_size=100)
+    # train_seed(args=args, project_id=project_id, coco_data=coco_data,
+    #            resume_or_load=True, seed_batch=0.2, batch_size=0.1)
+    train_on_batch(args=args, project_id=project_id, coco_data=coco_data,
+                   resume_or_load=True, seed_batch=0.2, batch_size=0.1)
