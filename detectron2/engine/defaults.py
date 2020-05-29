@@ -98,7 +98,13 @@ def default_setup(cfg, args=None):
 
     rank = comm.get_rank()
     setup_logger(output_dir, distributed_rank=rank, name="fvcore")
+
     logger = setup_logger(output_dir, distributed_rank=rank)
+
+    handlers = []
+    handlers.append(logger.handlers[-2])
+    handlers.append(logger.handlers[-1])
+    logger.handlers = handlers
 
     logger.info("Rank of current process: {}. World size: {}".format(rank, comm.get_world_size()))
     logger.info("Environment info:\n" + collect_env_info())

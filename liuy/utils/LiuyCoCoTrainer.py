@@ -94,7 +94,7 @@ class LiuyCoCoTrainer(SimpleTrainer):
         self.checkpointer = checkpointer
 
         self.start_iter = 0
-        self.max_iter = cfg.SOLVER.MAX_ITER
+        # self.max_iter = cfg.SOLVER.MAX_ITER
         self.cfg = cfg
 
         self._hooks = []
@@ -116,6 +116,7 @@ class LiuyCoCoTrainer(SimpleTrainer):
                 )
                 + 1
         )
+        self.start_iter = 0
 
     def build_hooks(self):
         """

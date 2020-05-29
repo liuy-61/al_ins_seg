@@ -35,6 +35,7 @@ class CoCoSegModel():
         self.args = args
         self.project_id = project_id
         self.resume_or_load = resume_or_load
+        self.coco_data = coco_data
         # tow ways to get model
         # 1：load the model which has been trained
         # 2：use the function：LiuyTrainer.build_model(self.cfg)
@@ -47,28 +48,38 @@ class CoCoSegModel():
         else:
             print("load project {} model from file".format(project_id))
         self.trainer = LiuyCoCoTrainer(self.cfg, self.model)
+
     def reset_model(self):
         """
         reset the model in CoCoSegModel and the model in LiuyCoCoTrainer
+        reset the cfg
         :return:
         """
+        del self.cfg
+        self.cfg = setup(args=self.args, project_id=self.project_id, coco_data=self.coco_data)
         del self.model
         self.model = LiuyCoCoTrainer.build_model(self.cfg)
+        print("initialize a new model for project {} ".format(self.project_id))
         self.model = self.model.to(self.device)
-
-        self.trainer.reset_model(cfg=self.cfg,model=self.model)
+        self.trainer.reset_model(cfg=self.cfg, model=self.model)
 
     def fit(self):
         if self.resume_or_load:
             self.trainer.resume_or_load()
+        data_len = len(self.trainer.data_loader.dataset._dataset._lst)
+        self.trainer.max_iter = int((270000 * data_len) / 45174)
         self.trainer.train()
+
         self.save_model()
 
     def fit_on_subset(self, data_loader, iter_num=0):
         if self.resume_or_load:
             self.trainer.resume_or_load()
+
         self.trainer.data_loader = data_loader
         self.trainer._data_loader_iter = iter(data_loader)
+        data_len = len(data_loader.dataset._dataset._lst)
+        self.trainer.max_iter = int((270000 * data_len) / 45174)
         self.trainer.train()
         self.save_model(iter_num=iter_num)
 
@@ -169,13 +180,21 @@ class CoCoSegModel():
         # return results
 
     def save_model(self, iter_num=None):
-        detail_output_dir = os.path.join(OUTPUT_DIR, 'project_' + self.project_id)
-        if iter_num is not None:
-            with open(os.path.join(detail_output_dir, self.project_id + "_model" + str(iter_num) + ".pkl"), 'wb') as f:
-                pickle.dump(self.trainer.model, f)
-        else:
-            with open(os.path.join(detail_output_dir, self.project_id + "_model" + ".pkl"), 'wb') as f:
-                pickle.dump(self.trainer.model, f)
+        """
+
+        :param iter_num:
+        :return: save the model the path same as log
+        """
+        self.cfg.OUTPUT_DIR
+        with open(os.path.join(self.cfg.OUTPUT_DIR, self.project_id + "_model" + ".pkl"), 'wb') as f:
+            pickle.dump(self.trainer.model, f)
+        # detail_output_dir = os.path.join(OUTPUT_DIR, 'project_' + self.project_id)
+        # if iter_num is not None:
+        #     with open(os.path.join(detail_output_dir, self.project_id + "_model" + str(iter_num) + ".pkl"), 'wb') as f:
+        #         pickle.dump(self.trainer.model, f)
+        # else:
+        #     with open(os.path.join(detail_output_dir, self.project_id + "_model" + ".pkl"), 'wb') as f:
+        #         pickle.dump(self.trainer.model, f)
 
 def setup(args, project_id, coco_data, train_size=None):
     """
@@ -188,7 +207,8 @@ def setup(args, project_id, coco_data, train_size=None):
     cfg.SOLVER.BASE_LR = 0.00025
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
     cfg.MODEL.MASK_ON = True
-    cfg.OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'project_' + project_id)
+    folder_num = get_folder_num(project_id=project_id)
+    cfg.OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'project_' + project_id, folder_num)
     register_coco_instances(name='coco_train', json_file=coco_data[0]['json_file'],
                             image_root=coco_data[0]['image_root'])
     register_coco_instances(name='coco_val', json_file=coco_data[1]['json_file'], image_root=coco_data[1]['image_root'])
@@ -201,16 +221,31 @@ def setup(args, project_id, coco_data, train_size=None):
     default_setup(cfg, args)
     return cfg
 
+def get_folder_num(project_id):
+    """
+    :return:get folder num next should be
+    """
+    iter = 0
+    dir = os.path.join(OUTPUT_DIR, 'project_' + project_id)
+
+    while True:
+        folder = dir + '/' + str(iter)
+        if os.path.exists(folder) == True:
+            iter += 1
+        else:
+            break
+    return str(iter)
 
 
 if __name__ == "__main__":
 
     args = default_argument_parser().parse_args()
-    seg_model = CoCoSegModel(args, project_id='coco', coco_data=debug_data, resume_or_load=True)
-    seg_model.test()
+    seg_model = CoCoSegModel(args, project_id='debug', coco_data=debug_data, resume_or_load=True)
+    # seg_model.fit()
     seg_model.reset_model()
-    seg_model.fit()
-    seg_model.test()
+    # seg_model.fit()
+    seg_model.reset_model()
+    # seg_model.fit()
     # seg_model.save_mask_features(json_file=coco_data[0]['json_file'],
     #                              image_root=coco_data[0]['image_root'],
     #                              selected_image_file=[])
