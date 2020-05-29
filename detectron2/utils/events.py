@@ -149,7 +149,6 @@ class CommonMetricPrinter(EventWriter):
     def write(self, max_iter=None):
         storage = get_event_storage()
         iteration = storage.iter
-
         data_time, time = None, None
         eta_string = "N/A"
         try:
