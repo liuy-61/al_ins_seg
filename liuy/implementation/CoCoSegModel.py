@@ -17,7 +17,7 @@ from liuy.utils.LiuyCoCoTrainer import LiuyCoCoTrainer
 from liuy.utils.ComputeLoss import LiuyComputeLoss
 from liuy.utils.LiuyTrainer import LiuyTrainer
 from liuy.utils.LiuyFeatureGetter import LiuyFeatureGetter
-from liuy.utils.local_cofig import coco_data,debug_data,MODEL_NAME
+from liuy.utils.local_cofig import coco_data, debug_data, MODEL_NAME
 # the  config file of the model
 
 
@@ -31,16 +31,32 @@ __all__ = ['CoCoSegModel',
 class CoCoSegModel():
     """Mask_RCNN"""
 
-    def __init__(self, args, project_id, coco_data, train_size=None, resume_or_load=False, ):
+    def __init__(self, args, project_id, coco_data, model_config='Mask_RCNN', train_size=None, resume_or_load=False,):
+        """
+
+        :param args:
+        :param project_id:
+        :param coco_data:
+        :param model_config: the default is Mask_RCNN without FPN, if need the Mask_RCNN with FPN then specify the config_file
+        as 'Mask_RCNN2'
+        :param train_size:
+        :param resume_or_load:
+        """
         self.args = args
         self.project_id = project_id
         self.resume_or_load = resume_or_load
         self.coco_data = coco_data
+        self.model_config = model_config
         # tow ways to get model
         # 1：load the model which has been trained
         # 2：use the function：LiuyTrainer.build_model(self.cfg)
         self.model, self.device = load_prj_model(project_id=project_id)
-        self.cfg = setup(args=args, project_id=project_id, coco_data=coco_data, train_size=train_size)
+        self.cfg = setup(args=args,
+                         project_id=project_id,
+                         coco_data=coco_data,
+                         model_config=self.model_config,
+                         train_size=train_size)
+
         if self.model is None:
             self.model = LiuyCoCoTrainer.build_model(self.cfg)
             self.model = self.model.to(self.device)
@@ -56,7 +72,11 @@ class CoCoSegModel():
         :return:
         """
         del self.cfg
-        self.cfg = setup(args=self.args, project_id=self.project_id, coco_data=self.coco_data)
+        self.cfg = setup(args=self.args,
+                         project_id=self.project_id,
+                         coco_data=self.coco_data,
+                         model_config=self.model_config)
+
         del self.model
         self.model = LiuyCoCoTrainer.build_model(self.cfg)
         print("initialize a new model for project {} ".format(self.project_id))
@@ -196,12 +216,12 @@ class CoCoSegModel():
         #     with open(os.path.join(detail_output_dir, self.project_id + "_model" + ".pkl"), 'wb') as f:
         #         pickle.dump(self.trainer.model, f)
 
-def setup(args, project_id, coco_data, train_size=None):
+def setup(args, project_id, coco_data,model_config,train_size=None):
     """
     Create configs and perform basic setups.
     """
     cfg = get_cfg()
-    config_file = MODEL_NAME['Mask_RCNN']
+    config_file = MODEL_NAME[model_config]
     cfg.merge_from_file(config_file)
     cfg.merge_from_list(args.opts)
     cfg.SOLVER.BASE_LR = 0.00025
