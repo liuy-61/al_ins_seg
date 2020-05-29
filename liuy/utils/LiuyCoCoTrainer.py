@@ -63,6 +63,44 @@ class LiuyCoCoTrainer(SimpleTrainer):
         self.cfg = cfg
         self.register_hooks(self.build_hooks())
 
+    def reset_model(self, cfg, model):
+        """
+
+        :return: except data_loader, reset the model
+        """
+        if comm.get_world_size() > 1:
+            model = DistributedDataParallel(
+                model, device_ids=[comm.get_local_rank()], broadcast_buffers=False
+            )
+        del self.model
+        self.model = model
+
+        optimizer = self.build_optimizer(cfg, model)
+        del self.optimizer
+        self.optimizer = optimizer
+
+        scheduler = self.build_lr_scheduler(cfg, optimizer)
+        del self.scheduler
+        self.scheduler = scheduler
+
+        checkpointer = DetectionCheckpointer(
+            # Assume you want to save checkpoints together with logs/statistics
+            model,
+            cfg.OUTPUT_DIR,
+            optimizer=optimizer,
+            scheduler=self.scheduler,
+        )
+        del self.checkpointer
+        self.checkpointer = checkpointer
+
+        self.start_iter = 0
+        self.max_iter = cfg.SOLVER.MAX_ITER
+        self.cfg = cfg
+
+        self._hooks = []
+        self.register_hooks(self.build_hooks())
+
+
     def resume_or_load(self, resume=True):
         """
         If `resume==True`, and last checkpoint exists, resume from it.
