@@ -59,7 +59,7 @@ class LiuyCoCoTrainer(SimpleTrainer):
             scheduler=self.scheduler,
         )
         self.start_iter = 0
-        self.max_iter = cfg.SOLVER.MAX_ITER
+        self.max_iter = int((270000 * self.data_len) / 45174)
         self.cfg = cfg
         self.register_hooks(self.build_hooks())
 
