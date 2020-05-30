@@ -216,6 +216,29 @@ class CoCoSegModel():
         #     with open(os.path.join(detail_output_dir, self.project_id + "_model" + ".pkl"), 'wb') as f:
         #         pickle.dump(self.trainer.model, f)
 
+    def save_selected_image_id(self, selected_image_id):
+        """
+
+        :param selected_image_id:
+        :return: None
+        save the selected image id to dir which is same as the model
+        """
+        detail_output_dir = os.path.join(self.cfg.OUTPUT_DIR, 'selected_image_id')
+        with open(detail_output_dir + '.pkl', 'wb') as f:
+            pickle.dump(selected_image_id, f, pickle.HIGHEST_PROTOCOL)
+        print("save img_id_list successfully")
+
+    def read_selected_image_id(self, iteration=None):
+        """
+
+        :param iteration:
+        :return:
+        """
+        if iteration is None:
+            detail_output_dir = os.path.join(self.cfg.OUTPUT_DIR, 'selected_image_id')
+        with open(detail_output_dir + '.pkl', 'rb') as f:
+            return pickle.load(f)
+
 def setup(args, project_id, coco_data,model_config,train_size=None):
     """
     Create configs and perform basic setups.
@@ -261,10 +284,12 @@ if __name__ == "__main__":
 
     args = default_argument_parser().parse_args()
     seg_model = CoCoSegModel(args, project_id='debug', coco_data=debug_data, resume_or_load=True)
+    seg_model.save_selected_image_id([24,4,52,6,78,])
+    a = seg_model.read_selected_image_id()
     # seg_model.fit()
-    seg_model.reset_model()
-    # seg_model.fit()
-    seg_model.reset_model()
+    # seg_model.reset_model()
+    # # seg_model.fit()
+    # seg_model.reset_model()
     # seg_model.fit()
     # seg_model.save_mask_features(json_file=coco_data[0]['json_file'],
     #                              image_root=coco_data[0]['image_root'],
