@@ -8,8 +8,10 @@
     对每一个簇,计算簇中所有特征点的均值并将其作为新的center
 直到簇不再发生变化或者达到最大迭代数
 """
+import os
+import pickle
 
-from liuy.utils.local_cofig import feature_path
+from liuy.utils.local_cofig import feature_path, OUTPUT_DIR
 import numpy as np
 import pandas as pd
 from scipy.spatial import distance_matrix
@@ -64,12 +66,40 @@ def k_means(feature_path, k):
             k_centroids = cent_df.iloc[:, :n-1].values
             result_sets[:, -1] = result_sets[:, -2]
 
-    image_id = result_sets[:, n]
-    class_id = result_sets[:, -2]
+    image_id = result_sets[:, n-1].reshape(-1, 1)
+    class_id = result_sets[:, -2].reshape(-1,1)
     image2class = np.hstack((image_id, class_id))
-    return image2class
-    debug = 1
 
+    save_image2class(image2class, k)
+    return image2class
+
+
+
+def save_image2class(image2class, k):
+
+    """
+
+    :param image2class: a nd array, m * 2, m means number of feature, the first column is the
+    image id, and the second is the class id
+    :param k number of the class
+    :return:
+    """
+    detail_output_dir = os.path.join(OUTPUT_DIR, 'image2class' + '_' + str(k))
+    with open(detail_output_dir + '.pkl', 'wb') as f:
+        pickle.dump(image2class, f, pickle.HIGHEST_PROTOCOL)
+    print("save image2class successfully")
+
+
+def read_image2class(k):
+    """
+
+    :param k: number of the class
+    :return:  a nd array, m * 2, m means number of feature, the first column is the
+    image id, and the second is the class id
+    """
+    detail_output_dir = os.path.join(OUTPUT_DIR, 'image2class' + '_' + str(k))
+    with open(detail_output_dir + '.pkl', 'rb') as f:
+        return pickle.load(f)
 
 
 
@@ -120,6 +150,57 @@ def handle_feature_cvs(feature_path):
     return features
     debug = 1
 
+def handle(image2class):
+    """
+
+    :param image2class: a nd array, m * 2, m means number of feature,
+    the first column is the image id, and the second is the class id
+    :return: list of list, each list is contain the same class' image id
+    """
+    image2class_pd = pd.DataFrame(image2class)
+    groups = []
+    a = image2class_pd.groupby(1)
+    for i in range(a.ngroups):
+        group = image2class[a.groups[i]][:, 0]
+        groups.append(group)
+    return groups
+
+def group_image(image2class):
+    """
+
+    :param image2class: a nd array, m * 2, m means number of feature,
+    the first column is the image id, and the second is the class id
+    :return: list of list, each list is contain the same class' image id
+    """
+    image2class_pd = pd.DataFrame(image2class)
+    groups = []
+    a = image2class_pd.groupby(1)
+    for i in range(a.ngroups):
+        group = image2class[a.groups[i]][:, 0]
+        groups.append(group)
+    return groups
+
+def group_loss(image_groups, losses):
+    """
+
+    :param image_groups: list of array, each array is contain the same class' image id
+    :param losses: list of dict, dict: 'image_id': int 'mask_loss':tensor
+    :return:
+    """
+    loss_groups = []
+    for array in image_groups:
+        loss_group = []
+        for image_id in array:
+            for loss_dict in losses:
+                if loss_dict['image_id'] == image_id:
+                    loss_group.append(loss_dict)
+                    break
+        loss_groups.append(loss_group)
+    return loss_groups
 
 if __name__ == '__main__':
-   k_means(feature_path=feature_path, k=10)
+   k_means(feature_path=feature_path, k=1000)
+   # detail_output_dir = os.path.join(OUTPUT_DIR, 'image2class' + '_' + str(10))
+   # with open(detail_output_dir + '.pkl', 'rb') as f:
+   #     a = pickle.load(f)
+   # print("save img_id_list successfully")
