@@ -29,3 +29,5 @@ MODEL_NAME = {
     'Mask_RCNN2': '/home/tangyp/liuy/al_ins_seg/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml',
 
     }
+
+feature_path = '/media/tangyp/Data/model_file/OUTPUT_DIR/45174.csv'
