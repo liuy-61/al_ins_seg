@@ -105,7 +105,7 @@ class LossSampler():
                                 already_selected,
                                 losses,
                                 loss_decrease=False):
-
+        already_selected_cp = copy.deepcopy(already_selected)
         image_group = self.group_image(image2class)
 
         loss_group = self.group_loss(image_groups=image_group,
@@ -117,7 +117,7 @@ class LossSampler():
         total_len = 0
 
         for i, group in enumerate(loss_group):
-            group = [loss_dict for loss_dict in group if loss_dict['image_id'] not in already_selected]
+            group = [loss_dict for loss_dict in group if loss_dict['image_id'] not in already_selected_cp]
             group_len.append(len(group))
             total_len += len(group)
 
@@ -131,10 +131,10 @@ class LossSampler():
             # use loss_sampler sample amount image id from this group
             print("select from {}th group".format(i))
             sample = self.select_batch(n_sample=amount,
-                                        already_selected=already_selected,
+                                        already_selected=already_selected_cp,
                                         losses=group,
                                         loss_decrease=False)
-            already_selected.extend(sample)
+            already_selected_cp.extend(sample)
             samples.extend(sample)
 
 
@@ -144,7 +144,7 @@ class LossSampler():
         if residue > 0:
             print('select from last iter')
             sample = self.select_batch(n_sample=residue,
-                                        already_selected=already_selected,
+                                        already_selected=already_selected_cp,
                                         losses=losses,
                                         loss_decrease=False)
             samples.extend(sample)
