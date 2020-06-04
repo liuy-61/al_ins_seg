@@ -113,17 +113,18 @@ class FeatureGetterBase:
                     """
                     in self.run step do what is diff
                     """
+                    len_slected_feature = 20
                     feature = self.run_step()
                     if project_id is not None and selected_image_file is not None:
 
                         if feature['image_id'] in selected_image_file:
                             selected_feature_list.append(feature)
-                            if len(selected_feature_list) == 1000:
+                            if len(selected_feature_list) == len_slected_feature:
                                 save_mask_feature(project_id=project_id, mask_feature=selected_feature_list,
                                                   serial_number=selected_serial_number, selected_or_not=True)
 
                                 selected_serial_number += 1
-                                num = selected_serial_number * 1000 + unselected_serial_number * 1000
+                                num = selected_serial_number * len_slected_feature + unselected_serial_number * len_slected_feature
                                 print("save {}  images' mask feature, still need {} images' feature to save "
                                       .format(num, self.max_iter-num))
                                 del selected_feature_list
@@ -131,12 +132,12 @@ class FeatureGetterBase:
 
                         else:
                             unselected_feature_list.append(feature)
-                            if len(unselected_feature_list) == 1000:
+                            if len(unselected_feature_list) == len_slected_feature:
                                 save_mask_feature(project_id=project_id, mask_feature=unselected_feature_list,
                                                   serial_number=unselected_serial_number, selected_or_not=False)
 
                                 unselected_serial_number += 1
-                                num = selected_serial_number * 1000 + unselected_serial_number * 1000
+                                num = selected_serial_number * len_slected_feature + unselected_serial_number * len_slected_feature
                                 print("save {}  images' mask feature, still need {} images' feature to save "
                                       .format(num, self.max_iter - num))
                                 del unselected_feature_list

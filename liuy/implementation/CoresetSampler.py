@@ -134,21 +134,3 @@ class CoreSetSampler:
         not_selected = self.whole_image_id[np.logical_not(np.in1d(self.whole_image_id, already_selected))]
         return not_selected
 
-    if __name__ == '__main__':
-        whole = np.array( [11,22,33,45,67,89,57])
-        selected = np.array([11,89,57])
-        not_selected = whole[np.logical_not(np.in1d(whole, selected))]
-
-        debug = 1
-
-    if __name__ == '__main__':
-        similarity_list = np.array([{'image_id': 1, 'tensor_feature': 4, 'similarity': 5},
-                           {'image_id': 4, 'tensor_feature': 8, 'similarity': 9}])
-
-        similarity_list = similarity_list.tolist()
-        dict = {'image_id': 4, 'tensor_feature': 8, 'similarity': 9}
-        similarity_list.remove(dict)
-
-        similarity_list = np.array(similarity_list)
-
-        debug = 1

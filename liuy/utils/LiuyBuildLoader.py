@@ -282,7 +282,7 @@ def get_detection_dataset_dicts(
     return dataset_dicts
 
 
-def build_detection_train_loader(cfg, mapper=None):
+def build_detection_train_loader(cfg, images_per_batch=2, mapper=None):
     """
        A data loader is created by the following steps:
        1. Use the dataset names in config to query :class:`DatasetCatalog`, and obtain a list of dicts.
@@ -297,9 +297,10 @@ def build_detection_train_loader(cfg, mapper=None):
                By default it will be `DatasetMapper(cfg, True)`.
        Returns:
            a torch DataLoader object
+           :param images_per_batch:
        """
     num_workers = get_world_size()
-    images_per_batch = 2
+    images_per_batch = images_per_batch
     assert (
             images_per_batch % num_workers == 0
     ), "SOLVER.IMS_PER_BATCH ({}) must be divisible by the number of workers ({}).".format(

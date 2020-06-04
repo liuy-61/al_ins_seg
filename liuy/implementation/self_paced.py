@@ -18,31 +18,12 @@ def generate_one_curve(
     """
     :return:
     """
-    # def select_batch(sampler, n_sample, already_selcted, **kwargs):
-    #     """
-    #
-    #     :param sampler:         active learning sampler
-    #     :param n_sample:        we select n_sample pieces of data（image）
-    #     :param already_selcted: Data （image）that has been selected before
-    #     :param kwargs:
-    #     :return:
-    #     """
-    #     kwargs['n_sample'] = n_sample
-    #     kwargs['already_selected'] = already_selcted
-    #     batch = sampler.select_batch(**kwargs)
-    #     return batch
-
     # initialize the quantity relationship
     whole_train_size = len(whole_image_id)
     if seed_batch < 1:
         seed_batch = int(seed_batch * whole_train_size)
     if batch_size < 1:
         batch_size = int(batch_size * whole_train_size)
-
-    # initialize the container
-    results = {}
-    data_sizes = []
-    mious = []
 
     # initally, seed_batch pieces of image were selected randomly
     selected_image_id = random.sample(whole_image_id, seed_batch)
@@ -60,20 +41,21 @@ def generate_one_curve(
         n_train_size = seed_batch + min((whole_train_size - seed_batch), n * batch_size)
         print('{} data ponints for training in iter{}'.format(n_train_size, n))
         assert n_train_size == len(selected_image_id)
-        data_sizes.append(n_train_size)
+
+        ins_seg_model.save_selected_image_id(selected_image_id)
 
         ins_seg_model.fit_on_subset(data_loader_from_selected_image_files)
-        miou = ins_seg_model.test()
-        mious.append(miou)
-        print('miou：{} in {} iter'.format(miou['miou'], n))
 
         # get the losses for loss_sampler
         losses = ins_seg_model.compute_loss(json_file=coco_data[0]['json_file'],
                                             image_root=coco_data[0]['image_root'],)
 
-
         n_sample = min(batch_size, whole_train_size - len(selected_image_id))
-        new_batch = sampler.select_batch(n_sample, already_selected=selected_image_id, losses=losses, loss_decrease=False)
+
+        new_batch = sampler.select_batch(n_sample,
+                                         already_selected=selected_image_id,
+                                         losses=losses,
+                                         loss_decrease=False)
         selected_image_id.extend(new_batch)
         print('Requested: %d, Selected: %d' % (n_sample, len(new_batch)))
 
@@ -89,10 +71,6 @@ def generate_one_curve(
         # reset model if
         ins_seg_model.reset_model()
 
-    results['mious'] = mious
-    results['data_sizes'] = data_sizes
-    results['sampler'] = sampler.sample_name
-    print(results)
 
 
 if __name__ == "__main__":

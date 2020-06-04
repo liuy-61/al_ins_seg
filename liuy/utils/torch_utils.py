@@ -41,4 +41,8 @@ def load_prj_model(project_id):
     model_ft = model_ft.to(device)
     return model_ft, device
 
+def load_regression_model(regression_id):
+    device = select_device()
+    detail_output_dir = os.path.join(OUTPUT_DIR, 'project_' + regression_id)
+
 

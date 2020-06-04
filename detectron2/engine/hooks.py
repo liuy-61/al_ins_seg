@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
-
 import datetime
 import logging
 import os
@@ -75,7 +72,6 @@ class IterationTimer(HookBase):
     """
     Track the time spent for each iteration (each run_step call in the trainer).
     Print a summary in the end of training.
-
     This hook uses the time between the call to its :meth:`before_step`
     and :meth:`after_step` methods.
     Under the convention that :meth:`before_step` of all hooks should only
@@ -143,7 +139,6 @@ class IterationTimer(HookBase):
 class PeriodicWriter(HookBase):
     """
     Write events to EventStorage periodically.
-
     It is executed every ``period`` iterations and after the last iteration.
     """
 
@@ -176,11 +171,9 @@ class PeriodicWriter(HookBase):
 class PeriodicCheckpointer(_PeriodicCheckpointer, HookBase):
     """
     Same as :class:`detectron2.checkpoint.PeriodicCheckpointer`, but as a hook.
-
     Note that when used as a hook,
     it is unable to save additional data other than what's defined
     by the given `checkpointer`.
-
     It is executed every ``period`` iterations and after the last iteration.
     """
 
@@ -235,20 +228,15 @@ class LRScheduler(HookBase):
 class AutogradProfiler(HookBase):
     """
     A hook which runs `torch.autograd.profiler.profile`.
-
     Examples:
-
     .. code-block:: python
-
         hooks.AutogradProfiler(
              lambda trainer: trainer.iter > 10 and trainer.iter < 20, self.cfg.OUTPUT_DIR
         )
-
     The above example will run the profiler for iteration 10~20 and dump
     results to ``OUTPUT_DIR``. We did not profile the first few iterations
     because they are typically slower than the rest.
     The result files can be loaded in the ``chrome://tracing`` page in chrome browser.
-
     Note:
         When used together with NCCL on older version of GPUs,
         autograd profiler may cause deadlock because it unnecessarily allocates
@@ -300,7 +288,6 @@ class AutogradProfiler(HookBase):
 class EvalHook(HookBase):
     """
     Run an evaluation function periodically, and at the end of training.
-
     It is executed every ``eval_period`` iterations and after the last iteration.
     """
 
@@ -310,7 +297,6 @@ class EvalHook(HookBase):
             eval_period (int): the period to run `eval_function`.
             eval_function (callable): a function which takes no arguments, and
                 returns a nested dict of evaluation metrics.
-
         Note:
             This hook must be enabled in all or none workers.
             If you would like only certain workers to perform evaluation,
@@ -357,7 +343,6 @@ class PreciseBN(HookBase):
     sometimes suboptimal.
     This class computes the true average of statistics rather than the moving average,
     and put true averages to every BN layer in the given model.
-
     It is executed every ``period`` iterations and after the last iteration.
     """
 

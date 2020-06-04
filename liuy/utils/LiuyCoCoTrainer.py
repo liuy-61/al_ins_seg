@@ -28,6 +28,8 @@ from detectron2.engine import hooks
 import liuy.utils.liuy_cityscapes_evaluation
 from liuy.utils.LiuyBuildLoader import build_detection_train_loader, build_detection_test_loader
 from liuy.utils.liuy_coco_evaluation import Liuy_COCOEvaluator
+
+
 class LiuyCoCoTrainer(SimpleTrainer):
     def __init__(self, cfg, model=None, data_loader=None):
 
@@ -65,7 +67,6 @@ class LiuyCoCoTrainer(SimpleTrainer):
 
     def reset_model(self, cfg, model):
         """
-
         :return: except data_loader, reset the model
         """
         if comm.get_world_size() > 1:
@@ -99,7 +100,6 @@ class LiuyCoCoTrainer(SimpleTrainer):
 
         self._hooks = []
         self.register_hooks(self.build_hooks())
-
 
     def resume_or_load(self, resume=True):
         """
@@ -195,11 +195,17 @@ class LiuyCoCoTrainer(SimpleTrainer):
         Returns:
             OrderedDict of results, if evaluation is enabled. Otherwise None.
         """
+
         super().train(self.start_iter, self.max_iter)
         if hasattr(self, "_last_eval_results") and comm.is_main_process():
             verify_results(self.cfg, self._last_eval_results)
             return self._last_eval_results
 
+    def train_on_single_data(self, base_model):
+        """
+
+        :return:
+        """
 
     @classmethod
     def build_model(cls, cfg):
@@ -242,8 +248,7 @@ class LiuyCoCoTrainer(SimpleTrainer):
         """
         return build_detection_train_loader(cfg)
 
-
-    def re_build_train_loader(self,  dataset_name):
+    def re_build_train_loader(self, dataset_name, images_per_batch=2):
         """
         Returns:
             iterable
@@ -251,7 +256,7 @@ class LiuyCoCoTrainer(SimpleTrainer):
         Overwrite it if you'd like a different data loader.
         """
         self.cfg.DATASETS.TRAIN = [dataset_name]
-        return build_detection_train_loader(self.cfg)
+        return build_detection_train_loader(self.cfg,images_per_batch)
 
     @classmethod
     def build_test_loader(cls, cfg, dataset_name):
@@ -262,7 +267,6 @@ class LiuyCoCoTrainer(SimpleTrainer):
         Overwrite it if you'd like a different data loader.
         """
         return build_detection_test_loader(cfg, dataset_name)
-
 
     @classmethod
     def test(cls, cfg, model, evaluators=None):

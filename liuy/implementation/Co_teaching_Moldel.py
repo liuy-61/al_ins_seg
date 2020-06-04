@@ -24,11 +24,6 @@ def generate_one_curve(
     if batch_size < 1:
         batch_size = int(batch_size * whole_train_size)
 
-    # initialize the container
-    results = {}
-    data_sizes = []
-    mious = []
-
     # initally, seed_batch pieces of image were selected randomly
     selected_image_id_1= random.sample(whole_image_id_1, seed_batch)
     selected_image_id_2 = random.sample(whole_image_id_2, seed_batch)
@@ -57,31 +52,38 @@ def generate_one_curve(
         print('{} data ponints for training in iter{}'.format(n_train_size, n))
         assert n_train_size == len(selected_image_id_1)
         assert len(selected_image_id_1) == len(selected_image_id_2)
-        data_sizes.append(n_train_size)
+
+        ins_seg_model_1.save_selected_image_id(selected_image_id_1)
 
         ins_seg_model_1.fit_on_subset(data_loader_1_from_selected_image_files)
-        miou = ins_seg_model_1.test()
-        mious.append(miou)
-        print('miou：{} in {} iter'.format(miou['miou'], n))
+
+        ins_seg_model_2.save_selected_image_id(selected_image_id_2)
 
         ins_seg_model_2.fit_on_subset(data_loader_2_from_selected_image_files)
 
 
         # get the losses for loss_sampler
+        print("get losses_1 use ins_seg_model_2")
         losses_1 = ins_seg_model_2.compute_loss(json_file=coco_data[0]['json_file'],
                                                 image_root=coco_data[0]['image_root'],)
 
+        print("get losses_2 use ins_seg_model_1")
         losses_2 = ins_seg_model_1.compute_loss(json_file=coco_data[0]['json_file'],
                                                 image_root=coco_data[0]['image_root'], )
 
 
         n_sample = min(batch_size, whole_train_size - len(selected_image_id_1))
 
-        new_batch_1 = sampler.select_batch(n_sample, already_selected=selected_image_id_1, losses=losses_2, loss_decrease=False)
+        new_batch_1 = sampler.select_batch(n_sample,
+                                           already_selected=selected_image_id_1,
+                                           losses=losses_2,
+                                           loss_decrease=False)
         selected_image_id_1.extend(new_batch_1)
         print('Requested: %d, Selected: %d' % (n_sample, len(new_batch_1)))
 
-        new_batch_2 = sampler.select_batch(n_sample, already_selected=selected_image_id_2, losses=losses_1,
+        new_batch_2 = sampler.select_batch(n_sample,
+                                           already_selected=selected_image_id_2,
+                                           losses=losses_1,
                                            loss_decrease=False)
         selected_image_id_2.extend(new_batch_2)
         print('Requested: %d, Selected: %d' % (n_sample, len(new_batch_2)))
@@ -94,7 +96,15 @@ def generate_one_curve(
                                                           image_root=coco_data[0]['image_root'],
                                                           selected_image_files=selected_image_id_1)
         data_loader_1_from_selected_image_files, l = ins_seg_model_1.trainer.re_build_train_loader(
-            'coco_from_selected_image')
+            'coco_from_selected_image_1')
+
+        register_coco_instances_from_selected_image_files(name='coco_from_selected_image_2',
+                                                          json_file=coco_data[0]['json_file'],
+                                                          image_root=coco_data[0]['image_root'],
+                                                          selected_image_files=selected_image_id_2)
+        data_loader_2_from_selected_image_files, l = ins_seg_model_2.trainer.re_build_train_loader(
+            'coco_from_selected_image_2')
+
         assert len(new_batch_1) == n_sample
         assert len(new_batch_2) == n_sample
 
@@ -102,25 +112,22 @@ def generate_one_curve(
         ins_seg_model_1.reset_model()
         ins_seg_model_2.reset_model()
 
-    results['mious'] = mious
-    results['data_sizes'] = data_sizes
-    results['sampler'] = sampler.sample_name
-    print(results)
 
 
 if __name__ == "__main__":
 
+    data = debug_data
     args = default_argument_parser().parse_args()
     seg_model_1 = CoCoSegModel(args,
                                project_id='co_teaching_model_1',
-                               coco_data=debug_data,
-                               model_config='Mask_RCNN',
+                               coco_data=data,
+                               model_config='Mask_RCNN2',
                                resume_or_load=True)
 
     seg_model_2 = CoCoSegModel(args,
                                project_id='co_teaching_model_2',
-                               coco_data=debug_data,
-                               model_config='Mask_RCNN2',
+                               coco_data=data,
+                               model_config='Mask_RCNN',
                                resume_or_load=True)
 
     data_loader_1 = seg_model_1.trainer.data_loader
@@ -138,5 +145,14 @@ if __name__ == "__main__":
         whole_image_id_2.append(item['image_id'])
 
     losssampler = LossSampler('loss_sampler')
+
+    generate_one_curve(whole_image_id_1=whole_image_id_1,
+                       whole_image_id_2=whole_image_id_2,
+                       coco_data=data,
+                       sampler=losssampler,
+                       ins_seg_model_1=seg_model_1,
+                       ins_seg_model_2=seg_model_2,
+                       seed_batch=100,
+                       batch_size=100)
 
 

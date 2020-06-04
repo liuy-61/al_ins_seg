@@ -98,9 +98,9 @@ def generate_one_curve(
 
 
 if __name__ == "__main__":
-
+    coco_data = debug_data
     args = default_argument_parser().parse_args()
-    seg_model = CoCoSegModel(args, project_id='self_paced_with_diversity', coco_data=debug_data, resume_or_load=True)
+    seg_model = CoCoSegModel(args, project_id='self_paced_with_diversity', coco_data=coco_data, resume_or_load=True)
     data_loader = seg_model.trainer.data_loader
     whole_image_id = []
     index_list = data_loader.dataset._dataset._lst
@@ -111,11 +111,11 @@ if __name__ == "__main__":
     image2class = read_image2class(k=10)
 
     losssampler = LossSampler('loss_sampler')
-    generate_one_curve(coco_data=debug_data,
+    generate_one_curve(coco_data=coco_data,
                        whole_image_id=whole_image_id,
                        sampler=losssampler,
                        ins_seg_model=seg_model,
-                       batch_size=100,
-                       seed_batch=100,
+                       batch_size=0.2,
+                       seed_batch=0.1,
                        image2class=image2class
                        )

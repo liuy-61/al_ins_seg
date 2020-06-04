@@ -10,14 +10,17 @@ from detectron2.utils.visualizer import Visualizer, ColorMode
 from liuy.Interface.BaseInsSegModel import BaseInsSegModel
 from detectron2.engine import default_argument_parser
 from detectron2.checkpoint import DetectionCheckpointer
-from liuy.utils.reg_dataset import register_a_cityscapes, register_coco_instances
-from liuy.utils.torch_utils import load_prj_model
+from liuy.utils.reg_dataset import register_a_cityscapes, register_coco_instances, \
+    register_coco_instances_from_selected_image_files
+from liuy.utils.torch_utils import load_prj_model, select_device
 from liuy.utils.torch_utils import OUTPUT_DIR
 from liuy.utils.LiuyCoCoTrainer import LiuyCoCoTrainer
 from liuy.utils.ComputeLoss import LiuyComputeLoss
 from liuy.utils.LiuyTrainer import LiuyTrainer
 from liuy.utils.LiuyFeatureGetter import LiuyFeatureGetter
 from liuy.utils.local_cofig import coco_data, debug_data, MODEL_NAME
+from liuy.utils.K_means import read_image2class
+from liuy.implementation.LossSampler import LossSampler
 # the  config file of the model
 
 
@@ -31,7 +34,12 @@ __all__ = ['CoCoSegModel',
 class CoCoSegModel():
     """Mask_RCNN"""
 
-    def __init__(self, args, project_id, coco_data, model_config='Mask_RCNN', train_size=None, resume_or_load=False,):
+    def __init__(self, args,
+                 project_id,
+                 coco_data,
+                 model_config='Mask_RCNN',
+                 train_size=None,
+                 resume_or_load=False,):
         """
 
         :param args:
@@ -47,9 +55,11 @@ class CoCoSegModel():
         self.resume_or_load = resume_or_load
         self.coco_data = coco_data
         self.model_config = model_config
-        # tow ways to get model
+        self.device = select_device()
+        # three ways to get model
         # 1：load the model which has been trained
         # 2：use the function：LiuyTrainer.build_model(self.cfg)
+        # 3:from the parameter
         self.model, self.device = load_prj_model(project_id=project_id)
         self.cfg = setup(args=args,
                          project_id=project_id,
@@ -83,6 +93,44 @@ class CoCoSegModel():
         self.model = self.model.to(self.device)
         self.trainer.reset_model(cfg=self.cfg, model=self.model)
 
+    def set_model(self, model, creat_new_folder=False):
+        """
+        del the self.model and then set the parameter model as self.model
+        :param model:
+        :return:
+        """
+        del self.cfg
+        self.cfg = setup(args=self.args,
+                         project_id=self.project_id,
+                         coco_data=self.coco_data,
+                         create_new_folder=creat_new_folder,
+                         model_config=self.model_config)
+
+        del self.model
+        self.model = model
+        print("initialize a new model for project {} ".format(self.project_id))
+        self.model = self.model.to(self.device)
+        self.trainer.reset_model(cfg=self.cfg, model=self.model)
+
+    def back_to_base_model(self, base_model):
+        """
+
+        :param base_model:
+        :return:
+        """
+        del self.cfg
+        self.cfg = setup(args=self.args,
+                         project_id=self.project_id,
+                         coco_data=self.coco_data,
+                         model_config=self.model_config,
+                         create_new_folder=None)
+
+        del self.model
+        self.model = copy.deepcopy(base_model)
+        # print("initialize a new model for project {} ".format(self.project_id))
+        self.model = self.model.to(self.device)
+        self.trainer.reset_model(cfg=self.cfg, model=self.model)
+
     def fit(self):
         if self.resume_or_load:
             self.trainer.resume_or_load()
@@ -103,6 +151,43 @@ class CoCoSegModel():
         self.trainer.train()
         self.save_model(iter_num=iter_num)
 
+    def fit_on_single_data(self, image_id_list):
+        """
+            for each image in image_id_list build a data_loader iteratively
+            return a list of dict,dict {'image_id':int, 'score':float}
+            use every data in image_id_list to fine tuning the base model
+            and compute the promotion as the image's score
+        """
+        score_list = []
+
+        base_model = copy.deepcopy(self.model)
+        result = self.test()
+        base_score = result['segm']['AP']
+
+        for image_id in image_id_list:
+            dic = {'image_id': image_id}
+            image_id = [image_id]
+            register_coco_instances_from_selected_image_files(name='coco_from_selected_image',
+                                                              json_file=coco_data[0]['json_file'],
+                                                              image_root=coco_data[0]['image_root'],
+                                                              selected_image_files=image_id)
+
+            data_loader, l = self.trainer.re_build_train_loader('coco_from_selected_image',
+                                                                images_per_batch=1)
+
+            self.trainer.data_loader = data_loader
+            self.trainer._data_loader_iter = iter(data_loader)
+            self.trainer.max_iter = 20
+            result = self.trainer.train()
+            dic['score'] = result['segm']['AP'] - base_score
+            score_list.append(dic)
+
+            # back_to_base model
+            self.back_to_base_model(base_model=base_model)
+
+        # save score_list
+        self.save_score_list(score_list)
+        return score_list
 
     def test(self):
         """
@@ -113,6 +198,7 @@ class CoCoSegModel():
         # self.trainer = LiuyCoCoTrainer(self.cfg, self.model)
         miou = self.trainer.test(self.cfg, self.trainer.model)
         return miou
+
 
     def compute_loss(self, json_file, image_root):
         """
@@ -208,13 +294,6 @@ class CoCoSegModel():
         self.cfg.OUTPUT_DIR
         with open(os.path.join(self.cfg.OUTPUT_DIR, self.project_id + "_model" + ".pkl"), 'wb') as f:
             pickle.dump(self.trainer.model, f)
-        # detail_output_dir = os.path.join(OUTPUT_DIR, 'project_' + self.project_id)
-        # if iter_num is not None:
-        #     with open(os.path.join(detail_output_dir, self.project_id + "_model" + str(iter_num) + ".pkl"), 'wb') as f:
-        #         pickle.dump(self.trainer.model, f)
-        # else:
-        #     with open(os.path.join(detail_output_dir, self.project_id + "_model" + ".pkl"), 'wb') as f:
-        #         pickle.dump(self.trainer.model, f)
 
     def save_selected_image_id(self, selected_image_id):
         """
@@ -228,6 +307,28 @@ class CoCoSegModel():
             pickle.dump(selected_image_id, f, pickle.HIGHEST_PROTOCOL)
         print("save img_id_list successfully")
 
+    def save_score_list(self, score_list):
+        """
+
+        :param score_list: a list of dict,dict {'image_id':int, 'score':float}
+        :return: None
+        save the score_list
+        """
+        detail_output_dir = os.path.join(OUTPUT_DIR, 'file')
+        if not os.path.exists(detail_output_dir):
+            os.makedirs(detail_output_dir)
+        detail_file = os.path.join(detail_output_dir, 'score_list.pkl')
+
+        # if the score_list has saved before, read it and merge it with new score_list
+        with open(detail_file, 'rb') as f:
+            old = pickle.load(f)
+        if old is not None:
+            score_list.extend(old)
+
+        with open(detail_file, 'wb') as f:
+            pickle.dump(score_list, f, pickle.HIGHEST_PROTOCOL)
+        print("save score_list successfully")
+
     def read_selected_image_id(self, iteration=None):
         """
 
@@ -239,7 +340,8 @@ class CoCoSegModel():
         with open(detail_output_dir + '.pkl', 'rb') as f:
             return pickle.load(f)
 
-def setup(args, project_id, coco_data,model_config,train_size=None):
+
+def setup(args, project_id, coco_data, model_config, create_new_folder=True, train_size=None):
     """
     Create configs and perform basic setups.
     """
@@ -250,8 +352,11 @@ def setup(args, project_id, coco_data,model_config,train_size=None):
     cfg.SOLVER.BASE_LR = 0.00025
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 1
     cfg.MODEL.MASK_ON = True
-    folder_num = get_folder_num(project_id=project_id)
-    cfg.OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'project_' + project_id, folder_num)
+    if create_new_folder:
+        folder_num = get_folder_num(project_id=project_id)
+        cfg.OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'project_' + project_id, folder_num)
+    else:
+        cfg.OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'project_' + project_id)
     register_coco_instances(name='coco_train', json_file=coco_data[0]['json_file'],
                             image_root=coco_data[0]['image_root'])
     register_coco_instances(name='coco_val', json_file=coco_data[1]['json_file'], image_root=coco_data[1]['image_root'])
@@ -283,23 +388,11 @@ def get_folder_num(project_id):
 if __name__ == "__main__":
 
     args = default_argument_parser().parse_args()
-    seg_model = CoCoSegModel(args, project_id='debug', coco_data=debug_data, resume_or_load=True)
-    seg_model.save_selected_image_id([24,4,52,6,78,])
-    a = seg_model.read_selected_image_id()
-    # seg_model.fit()
-    # seg_model.reset_model()
-    # # seg_model.fit()
-    # seg_model.reset_model()
-    # seg_model.fit()
-    # seg_model.save_mask_features(json_file=coco_data[0]['json_file'],
-    #                              image_root=coco_data[0]['image_root'],
-    #                              selected_image_file=[])
-    # seg_model.save_model()
-    # seg_model.get_mask_features(json_file=debug_data[0]['json_file'], image_root=debug_data[0]['image_root'])
-    # seg_model.fit()
-    # # seg_model.trainer.resume_or_load()
-    # seg_model.test()
-    # miou=seg_model.test()
-    # model.predict()
-    #prediction = model.predict_proba(coco_data[1]['json_file'], coco_data[1]['image_root'])
-    debug = 1
+    seg_model = CoCoSegModel(args, project_id='coco',
+                             coco_data=coco_data,
+                             model_config='Mask_RCNN',
+                             resume_or_load=True)
+    seg_model.save_mask_features(json_file=coco_data[0]['json_file'],
+                                 image_root=coco_data[0]['image_root'],
+                                 selected_image_file=[])
+

@@ -23,14 +23,15 @@ from liuy.Interface.BaseSampler import BaseSampler
 #         return samples
 
 class CoCoRandomSampler(BaseSampler):
-    def __init__(self, sampler_name, data_loader):
-        super(CoCoRandomSampler, self).__init__(sampler_name, data_loader)
+    def __init__(self, sampler_name, whole_image_id):
+        self.sampler_name = sampler_name
+        self.whole_image_id = whole_image_id
 
     def select_batch(self, n_sample, already_selected):
         cnt = 0
         samples = []
         while cnt < n_sample:
-            sample = random.sample(self.image_files_list, 1)
+            sample = random.sample(self.whole_image_id, 1)
             if sample[0] not in already_selected and sample[0] not in samples:
                 cnt += 1
                 samples.append(sample[0])
