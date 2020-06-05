@@ -11,7 +11,7 @@
 import os
 import pickle
 
-from liuy.utils.local_cofig import feature_path, OUTPUT_DIR
+from liuy.utils.local_cofig import OUTPUT_DIR, VAE_feature_path
 import numpy as np
 import pandas as pd
 from scipy.spatial import distance_matrix
@@ -84,7 +84,7 @@ def save_image2class(image2class, k):
     :param k number of the class
     :return:
     """
-    detail_output_dir = os.path.join(OUTPUT_DIR, 'image2class' + '_' + str(k))
+    detail_output_dir = os.path.join(OUTPUT_DIR, 'file', 'image2class' + '_' + str(k))
     with open(detail_output_dir + '.pkl', 'wb') as f:
         pickle.dump(image2class, f, pickle.HIGHEST_PROTOCOL)
     print("save image2class successfully")
@@ -97,7 +97,7 @@ def read_image2class(k):
     :return:  a nd array, m * 2, m means number of feature, the first column is the
     image id, and the second is the class id
     """
-    detail_output_dir = os.path.join(OUTPUT_DIR, 'image2class' + '_' + str(k))
+    detail_output_dir = os.path.join(OUTPUT_DIR, 'file', 'image2class' + '_' + str(k))
     with open(detail_output_dir + '.pkl', 'rb') as f:
         return pickle.load(f)
 
@@ -199,7 +199,7 @@ def group_loss(image_groups, losses):
     return loss_groups
 
 if __name__ == '__main__':
-   k_means(feature_path=feature_path, k=1000)
+   k_means(feature_path=VAE_feature_path, k=50)
    # detail_output_dir = os.path.join(OUTPUT_DIR, 'image2class' + '_' + str(10))
    # with open(detail_output_dir + '.pkl', 'rb') as f:
    #     a = pickle.load(f)

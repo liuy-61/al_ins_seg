@@ -3,8 +3,8 @@ coco_data = [{'json_file': '/media/tangyp/Data/coco/annotations/instances_train2
               'image_root': '/media/tangyp/Data/coco/train2014'
               },
              {
-                 # 'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
-                 'json_file': '/media/tangyp/Data/coco/annotations/sub_val2014.json',
+                 'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
+                 # 'json_file': '/media/tangyp/Data/coco/annotations/sub_val2014.json',
                  'image_root': '/media/tangyp/Data/coco/val2014'
              },
              ]
@@ -31,6 +31,6 @@ MODEL_NAME = {
 
 feature_path = '/media/tangyp/Data/model_file/OUTPUT_DIR/file/45174.csv'
 
-VAE_feature_path = '/media/tangyp/Data/model_file/OUTPUT_DIR/file/VAE_feature.cvs'
+VAE_feature_path = '/media/tangyp/Data/model_file/OUTPUT_DIR/file/VAE_feature.csv'
 
 score_list_path = '/media/tangyp/Data/model_file/OUTPUT_DIR/file/score_list.pkl'

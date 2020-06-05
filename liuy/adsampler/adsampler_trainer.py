@@ -584,20 +584,26 @@ if __name__ == '__main__':
         dis_weight="weight/dis_model_14912_2500.pth")
 
     # 构造训练用的dataloader
-    labeled_data, unlabeled_data = trainer.get_data_loader(
-        all_imageid_path="imageid/all",
-        labeled_imageid_path="imageid/VAAL/2000",
-        coco_data=coco_data
-    )
+    # labeled_data, unlabeled_data = trainer.get_data_loader(
+    #     all_imageid_path="imageid/all",
+    #     labeled_imageid_path="imageid/VAAL/2000",
+    #     coco_data=coco_data
+    # )
+    labeled_data, unlabeled_data = trainer.build_data_loader(coco_data=coco_data)
     # 开始训练
     trainer.train_vae_dis(labeled_data, unlabeled_data)
 
     # 传入的img_id生成隐变量的csv文件
-    trainer.get_csv(img_list_path="imageid/all",
-                    save_name=VAE_feature_path)
+    # trainer.get_csv(img_list_path="imageid/all",
+    #                 save_name=VAE_feature_path)
+
+    trainer.save_vae_feature(save_name=VAE_feature_path)
 
     n_sample = 2000
-    trainer.sample(labeled_imageid_path="imageid/VAAL/2000",
-                   unlabeled_data_loader=unlabeled_data,
-                   n_sample=n_sample,
-                   save_path="imageid/VAAL/")
+    # trainer.sample(labeled_imageid_path="imageid/VAAL/2000",
+    #                unlabeled_data_loader=unlabeled_data,
+    #                n_sample=n_sample,
+    #                save_path="imageid/VAAL/")
+
+    new_batch = trainer.select_batch(n_sample=n_sample,
+                         already_selected=[36, 49, 61])

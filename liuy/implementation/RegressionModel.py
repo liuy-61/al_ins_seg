@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 
 from detectron2.engine import default_argument_parser
-from liuy.utils.local_cofig import OUTPUT_DIR, feature_path,score_list_path
+from liuy.utils.local_cofig import OUTPUT_DIR, VAE_feature_path ,score_list_path
 import os
 from torch.utils.tensorboard import SummaryWriter
 
@@ -242,11 +242,6 @@ def generate_one_curve(
     if batch_size < 1:
         batch_size = int(batch_size * whole_train_size)
 
-    # initialize the container
-    results = {}
-    data_sizes = []
-    mious = []
-
     # initally, seed_batch pieces of image were selected randomly
     selected_image_id = random.sample(whole_image_id, seed_batch)
     # register data set and build data loader
@@ -263,14 +258,11 @@ def generate_one_curve(
         n_train_size = seed_batch + min((whole_train_size - seed_batch), n * batch_size)
         print('{} data ponints for training in iter{}'.format(n_train_size, n))
         assert n_train_size == len(selected_image_id)
-        data_sizes.append(n_train_size)
+
 
         ins_seg_model.save_selected_image_id(selected_image_id)
 
         ins_seg_model.fit_on_subset(data_loader_from_selected_image_files)
-        miou = ins_seg_model.test()
-        mious.append(miou)
-        print('miou：{} in {} iter'.format(miou['miou'], n))
 
         # get the losses for loss_sampler
         losses = ins_seg_model.compute_loss(json_file=coco_data[0]['json_file'],
@@ -294,9 +286,6 @@ def generate_one_curve(
         # reset model if
         ins_seg_model.reset_model()
 
-    results['mious'] = mious
-    results['data_sizes'] = data_sizes
-    print(results)
 
 
 if __name__ == '__main__':
@@ -366,28 +355,28 @@ if __name__ == '__main__':
     """
     regression_model = Regression(regression_id='regression')
 
-    train(regression_model,
-          feature_path=feature_path,
+    train_regre(regression_model,
+          feature_path=VAE_feature_path,
           score_list_path=score_list_path,
           Epoch=4)
 
-    # del base_model
-    del seg_model
 
-    predict_score = regression_model.get_predict(feature_path)
+    # del seg_model
 
-    seg_model = CoCoSegModel(args, project_id='reg', coco_data=coco_data, resume_or_load=True)
+    predict_score = regression_model.get_predict(VAE_feature_path)
+
+    ins_seg_model = CoCoSegModel(args, project_id='reg', coco_data=coco_data, resume_or_load=True)
 
     whole_image_id = [item['image_id'] for item in data_loader.dataset._dataset._lst]
 
     sampler = RegressionSampler(regression_model=regression_model,
                                 sampler_name='regression',
-                                predict_score=predict_score)
+                                feature_score=predict_score)
 
     generate_one_curve(whole_image_id=whole_image_id,
                        coco_data=coco_data,
                        sampler=sampler,
-                       ins_seg_model=seg_model,
+                       ins_seg_model=ins_seg_model,
                        seed_batch=0.2,
                        batch_size=0.1)
 

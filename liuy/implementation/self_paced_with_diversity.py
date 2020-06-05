@@ -108,7 +108,7 @@ if __name__ == "__main__":
         whole_image_id.append(item['image_id'])
 
     """"""
-    image2class = read_image2class(k=10)
+    image2class = read_image2class(k=50)
 
     losssampler = LossSampler('loss_sampler')
     generate_one_curve(coco_data=coco_data,

@@ -2993,3 +2993,53 @@
 2020-06-04 21:13:15,082 __main__ INFO --discriminator load weight success
 2020-06-04 21:16:07,686 __main__ INFO --vae load weight success
 2020-06-04 21:16:07,688 __main__ INFO --discriminator load weight success
+2020-06-04 21:45:05,506 __main__ INFO --vae load weight success
+2020-06-04 21:45:05,508 __main__ INFO --discriminator load weight success
+2020-06-04 21:45:43,466 __main__ INFO --labeled batch:353
+2020-06-04 21:45:43,467 __main__ INFO --unlabeled batch:353
+2020-06-04 21:45:43,467 __main__ INFO --train_iteration:17650
+2020-06-04 21:46:09,900 __main__ INFO --10 iters using 26.432460069656372 s
+2020-06-04 21:46:09,900 __main__ INFO Current training iteration: 10
+2020-06-04 21:46:09,900 __main__ INFO Current vae model loss: 39375.9336
+2020-06-04 21:46:09,900 __main__ INFO Current discriminator model loss: 7.9924
+2020-06-04 21:46:36,057 __main__ INFO --10 iters using 26.156513452529907 s
+2020-06-04 21:46:36,057 __main__ INFO Current training iteration: 20
+2020-06-04 21:46:36,057 __main__ INFO Current vae model loss: 29936.7930
+2020-06-04 21:46:36,058 __main__ INFO Current discriminator model loss: 1.4256
+2020-06-04 21:47:02,069 __main__ INFO --10 iters using 26.01068639755249 s
+2020-06-04 21:47:02,069 __main__ INFO Current training iteration: 30
+2020-06-04 21:47:02,069 __main__ INFO Current vae model loss: 24163.9980
+2020-06-04 21:47:02,069 __main__ INFO Current discriminator model loss: 1.7935
+2020-06-04 21:47:28,223 __main__ INFO --10 iters using 26.153348207473755 s
+2020-06-04 21:47:28,223 __main__ INFO Current training iteration: 40
+2020-06-04 21:47:28,223 __main__ INFO Current vae model loss: 16667.9258
+2020-06-04 21:47:28,223 __main__ INFO Current discriminator model loss: 1.3819
+2020-06-04 21:47:55,759 __main__ INFO --10 iters using 27.535536766052246 s
+2020-06-04 21:47:55,759 __main__ INFO Current training iteration: 50
+2020-06-04 21:47:55,759 __main__ INFO Current vae model loss: 10117.7852
+2020-06-04 21:47:55,760 __main__ INFO Current discriminator model loss: 1.3652
+2020-06-04 21:48:23,466 __main__ INFO --10 iters using 27.706466913223267 s
+2020-06-04 21:48:23,467 __main__ INFO Current training iteration: 60
+2020-06-04 21:48:23,467 __main__ INFO Current vae model loss: 5288.0625
+2020-06-04 21:48:23,467 __main__ INFO Current discriminator model loss: 1.3852
+2020-06-04 21:48:50,939 __main__ INFO --10 iters using 27.472114324569702 s
+2020-06-04 21:48:50,939 __main__ INFO Current training iteration: 70
+2020-06-04 21:48:50,940 __main__ INFO Current vae model loss: 1949.6584
+2020-06-04 21:48:50,940 __main__ INFO Current discriminator model loss: 1.4080
+2020-06-04 21:49:18,955 __main__ INFO --10 iters using 28.015337705612183 s
+2020-06-04 21:49:18,956 __main__ INFO Current training iteration: 80
+2020-06-04 21:49:18,956 __main__ INFO Current vae model loss: 942.5888
+2020-06-04 21:49:18,956 __main__ INFO Current discriminator model loss: 1.3949
+2020-06-04 21:49:48,768 __main__ INFO --10 iters using 29.81200122833252 s
+2020-06-04 21:49:48,768 __main__ INFO Current training iteration: 90
+2020-06-04 21:49:48,769 __main__ INFO Current vae model loss: 445.4500
+2020-06-04 21:49:48,769 __main__ INFO Current discriminator model loss: 1.3871
+2020-06-04 21:50:18,202 __main__ INFO Current lr: 0.0005
+2020-06-04 21:50:18,203 __main__ INFO Current lr: 0.0005
+2020-06-04 21:50:18,203 __main__ INFO --10 iters using 29.433255910873413 s
+2020-06-04 21:50:18,203 __main__ INFO Current training iteration: 100
+2020-06-04 21:50:18,203 __main__ INFO Current vae model loss: 252.4908
+2020-06-04 21:50:18,204 __main__ INFO Current discriminator model loss: 1.3806
+2020-06-04 21:50:21,257 __main__ INFO --over patient iter:100, now iter: 101
+2020-06-05 13:38:11,151 __main__ INFO --build eval data_loader done!
+2020-06-05 13:51:16,876 __main__ INFO --compute feature done!
