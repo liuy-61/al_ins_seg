@@ -21,27 +21,50 @@
 在运行实例之前，首先需要修改配置，输入数据集路径与输出路径等。
 
 ##  Path Configuration
-1. 找到`liuy/implementation/CoCoAlmodel.py`中的以下代码：
+新建或修改liuy/utils/local_config.py文件
+对于不同的机器，一些数据读取，文件读写的路径可能不一样，因此需要按照实际情况配置liuy/utils/local_config.py文件
+1 数据集存储路径：示例如下,其中coco_data是完整数据集的路径配置，debug_data是debug时的数据集配置。
 ```
-if __name__ == "__main__":
-    coco_data = [{'json_file': '/media/tangyp/Data/coco/annotations/instances_train2014.json',
-                  'image_root': '/media/tangyp/Data/coco/train2014'
-                  },
-                 {
-                     'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
-                     # 'json_file': '/home/tangyp/liuy/detectron2_origin/liuy/utils/sub_val2014.json',
-                     'image_root': '/media/tangyp/Data/coco/val2014'
-                 }]
-```
-以上四条路径分别为训练集的标记json文件，image路径，测试集的标记json文件，及其image路径。请将其修改为本地数据数据集的路径。
+coco_data = [{'json_file': '/media/tangyp/Data/coco/annotations/instances_train2014.json',
+              'image_root': '/media/tangyp/Data/coco/train2014'
+              },
+             {
+                 'json_file': '/media/tangyp/Data/coco/annotations/instances_val2014.json',
+                 # 'json_file': '/media/tangyp/Data/coco/annotations/sub_val2014.json',
+                 'image_root': '/media/tangyp/Data/coco/val2014'
+             },
+             ]
 
-2. 修改`liuy/utils/torch_utils.py`文件
+debug_data = [{'json_file': '/media/tangyp/Data/coco/annotations/sub_train2014.json',
+               'image_root': '/media/tangyp/Data/coco/train2014'
+               },
+              {
+                  'json_file': '/media/tangyp/Data/coco/annotations/sub_val2014.json',
+                  'image_root': '/media/tangyp/Data/coco/val2014'
+              },
+              ]
 ```
-OUTPUT_DIR = '/home/tangyp/liuy/mode_file/OUTPUT'
+2 模型存储路径
 ```
-OUTPUT_DIR为模型中间文件和训练后模型的保存路径，按实际情况修改这个路径。
+OUTPUT_DIR = '/media/tangyp/Data/model_file/OUTPUT_DIR'
+```
+3 配置文件路径
+```
+MODEL_NAME = {
+    'Faster_RCNN': '/home/tangyp/liuy/detectron2_origin/configs/COCO-Detection/faster_rcnn_R_50_C4_1x.yaml',
 
-4. 对于使用了IDE的同学，请在IDE中设置以下命令行参数。如果直接使用命令行，请在运行时直接带上以下参数
+    'Mask_RCNN': '/home/tangyp/liuy/detectron2_origin/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_3x.yaml',
+
+    'Mask_RCNN2': '/home/tangyp/liuy/al_ins_seg/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml',
+
+}
+```
+4 VAE提取特征后特征的存储路径
+```
+VAE_feature_path = '/media/tangyp/Data/model_file/OUTPUT_DIR/file/VAE_feature.csv'
+```
+
+5 对于使用了IDE的同学，请在IDE中设置以下命令行参数。如果直接使用命令行，请在运行时直接带上以下参数
 ```
 --config-file
 detectron2_origin/configs/COCO-InstanceSegmentation/mask_rcnn_R_50_C4_3x.yaml
