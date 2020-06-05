@@ -41,3 +41,4 @@ dist/
 /models
 
 liuy/utils/local_config.py
+liuy/adsampler/adsample.log
