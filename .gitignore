@@ -38,3 +38,5 @@ dist/
 # project dirs
 /datasets
 /models
+
+liuy/utils/local_cofig.py
