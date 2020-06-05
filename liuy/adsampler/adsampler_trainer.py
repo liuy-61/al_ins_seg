@@ -19,12 +19,12 @@ from liuy.implementation.CoCoSegModel import CoCoSegModel
 # from warmup_scheduler import GradualWarmupScheduler
 from torch.optim.lr_scheduler import CosineAnnealingLR, MultiStepLR
 from ranger import Ranger
-from liuy.utils.local_config import VAE_feature_path
+from liuy.utils.local_config import VAE_feature_path, WEIGHT_path
 import codecs
 import csv
 from PIL import Image
+from torch.autograd import Variable
 
-weight_path = "./weight"
 project_start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 img_path = "/home/muyun99/Desktop/coco/train2014"
 
@@ -90,8 +90,10 @@ class Adversary_sampler_trainer:
     def get_data_loader(self, all_imageid_path, labeled_imageid_path, coco_data):
         all_imageid = read_img_list(path=all_imageid_path)
         all_imageid = np.setdiff1d(list(all_imageid), list(error_imgid))
-        labeled_imageid = read_img_list(path=labeled_imageid_path)
-        # labeled_imageid = np.random.choice(all_imageid, int(all_imageid.size/2), replace=False)
+        if labeled_imageid_path is None:
+            labeled_imageid = random.sample(list(all_imageid), int(len(all_imageid)*0.5))
+        else:
+            labeled_imageid = read_img_list(path=labeled_imageid_path)
 
         self.coco_data = coco_data
         self.all_imageid = all_imageid
@@ -114,15 +116,15 @@ class Adversary_sampler_trainer:
         unlabeled_df = pd.DataFrame(temp_dict)
 
         labeled_data_set = MyDataSet(labeled_df, transform)
-        labeled_data_loader = (DataLoader(labeled_data_set, batch_size=self.batch_size, shuffle=True, drop_last=False))
+        labeled_data_loader = (DataLoader(labeled_data_set, batch_size=self.batch_size, shuffle=False, drop_last=False))
 
         unlabeled_data_set = MyDataSet(unlabeled_df, transform)
         unlabeled_data_loader = (
-            DataLoader(unlabeled_data_set, batch_size=self.batch_size, shuffle=True, drop_last=False))
+            DataLoader(unlabeled_data_set, batch_size=self.batch_size, shuffle=False, drop_last=False))
 
         return labeled_data_loader, unlabeled_data_loader
 
-    def build_data_loader(self, coco_data, labeled_imageid=None):
+    def build_data_loader(self, coco_data):
         """
         the different between build_data_loader function and get_data_loader fun
         is the parameter
@@ -136,10 +138,7 @@ class Adversary_sampler_trainer:
         # turn the whole_image_id from list[int] to numpy array,
         # get unlabeled_imageid & labeled imageid from the whole_image_id
         all_imageid = np.array(self.whole_image_id)
-        if labeled_imageid is None:
-            labeled_imageid = np.random.choice(all_imageid, int(all_imageid.size/2), replace=False)
-        else:
-            labeled_imageid = np.array(labeled_imageid)
+        labeled_imageid = np.random.sample(all_imageid, int(all_imageid.size / 2), replace=False)
         unlabeled_imageid = np.setdiff1d(list(all_imageid), list(labeled_imageid))
 
         self.coco_data = coco_data
@@ -163,14 +162,13 @@ class Adversary_sampler_trainer:
         unlabeled_df = pd.DataFrame(temp_dict)
 
         labeled_data_set = MyDataSet(labeled_df, transform)
-        labeled_data_loader = (DataLoader(labeled_data_set, batch_size=self.batch_size, shuffle=True, drop_last=False))
+        labeled_data_loader = (DataLoader(labeled_data_set, batch_size=self.batch_size, shuffle=False, drop_last=False))
 
         unlabeled_data_set = MyDataSet(unlabeled_df, transform)
         unlabeled_data_loader = (
-            DataLoader(unlabeled_data_set, batch_size=self.batch_size, shuffle=True, drop_last=False))
+            DataLoader(unlabeled_data_set, batch_size=self.batch_size, shuffle=False, drop_last=False))
 
         return labeled_data_loader, unlabeled_data_loader
-
 
     def load_weight(self, vae_weight, dis_weight):
         self.vae.load_state_dict(torch.load(vae_weight))
@@ -312,12 +310,11 @@ class Adversary_sampler_trainer:
                 write_logger('Current discriminator model loss: {:.4f}'.format(dsc_loss.item()))
                 start_time = time.time()
 
-
             if iter_count % 2500 == 0:
                 torch.save(self.vae.state_dict(),
-                           os.path.join(weight_path, "vae_model_{}_{}.pth".format(save_name, iter_count, )))
+                           os.path.join(WEIGHT_path, "vae_model_{}_{}.pth".format(save_name, iter_count, )))
                 torch.save(self.discriminator.state_dict(),
-                           os.path.join(weight_path, "dis_model_{}_{}.pth".format(save_name, iter_count)))
+                           os.path.join(WEIGHT_path, "dis_model_{}_{}.pth".format(save_name, iter_count)))
 
             if total_vae_loss.item() < min_vae_loss:
                 min_vae_loss = total_vae_loss.item()
@@ -337,43 +334,38 @@ class Adversary_sampler_trainer:
 
         project_end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         torch.save(self.vae.state_dict(),
-                   os.path.join(weight_path, "vae_model_{}_{}_{}.pth".format(save_name, project_start_time,
+                   os.path.join(WEIGHT_path, "vae_model_{}_{}_{}.pth".format(save_name, project_start_time,
                                                                              project_end_time)))
         torch.save(self.discriminator.state_dict(),
-                   os.path.join(weight_path, "dis_model_{}_{}_{}.pth".format(save_name, project_start_time,
+                   os.path.join(WEIGHT_path, "dis_model_{}_{}_{}.pth".format(save_name, project_start_time,
                                                                              project_end_time)))
 
     def get_csv(self, img_list_path, save_name):
         img_list = read_img_list(path=img_list_path)
-        # list[int] image_id
         self.vae = self.vae.to(self.device)
         self.vae.eval()
 
         img_filename_list = []
         for img_id in img_list:
             img_filename_list.append(os.path.join(img_path, "COCO_train2014_" + str(img_id).zfill(12) + ".jpg"))
-        # list[str] file name
-        temp_dict = {"filename": img_filename_list, "label": 1}
-        labeled_df = pd.DataFrame(temp_dict)
-
-        labeled_data_set = MyDataSet(labeled_df, transform)
-        data_loader = (DataLoader(labeled_data_set, batch_size=32, shuffle=True, drop_last=False))
-        write_logger("--build eval data_loader done!")
 
         features = []
         count = 0
-        print(len(data_loader))
-        for img, _, _ in data_loader:
+        for single_img_filename in img_filename_list:
+            img = Image.open(single_img_filename).convert('RGB')
+            img = transform(img)
+            img = img.unsqueeze(0)
             img = img.to(self.device)
+
             count += 1
-            print(count)
+
             recon, z, mu, logvar = self.vae(img)
 
             z = z.cpu().data
             for single_z in z:
                 features.append(list(single_z.detach().numpy()))
-            # if count == 3:
-            #     break
+            if count == 1000:
+                print(count)
         write_logger("--compute feature done!")
 
         save_list = []
@@ -384,9 +376,8 @@ class Adversary_sampler_trainer:
         test_csv = pd.DataFrame(columns=name, data=save_list)
         test_csv.to_csv(save_name, encoding='utf-8')
 
-    def save_vae_feature(self, save_name, image_id=None):
+    def save_vae_feature(self, save_name):
         """
-
         :param image_id: list[int] the id of the image which will be extracted feature,
         if image_id is None, whole image will be extracted feature
         :return:
@@ -398,29 +389,24 @@ class Adversary_sampler_trainer:
 
         img_filename_list = []
         for img_id in img_list:
-            img_filename_list.append(os.path.join(coco_data[0]['image_root'], "COCO_train2014_" + str(img_id).zfill(12) + ".jpg"))
-        # list[str] file name
-        temp_dict = {"filename": img_filename_list, "label": 1}
-        labeled_df = pd.DataFrame(temp_dict)
-
-        labeled_data_set = MyDataSet(labeled_df, transform)
-        data_loader = (DataLoader(labeled_data_set, batch_size=32, shuffle=True, drop_last=False))
-        write_logger("--build eval data_loader done!")
-
+            img_filename_list.append(
+                os.path.join(coco_data[0]['image_root'], "COCO_train2014_" + str(img_id).zfill(12) + ".jpg"))
         features = []
         count = 0
-        print(len(data_loader))
-        for img, _, _ in data_loader:
-            img = img.to(self.device)
-            count += 1
-            print(count)
-            recon, z, mu, logvar = self.vae(img)
 
+        for single_img_filename in img_filename_list:
+            img = Image.open(single_img_filename).convert('RGB')
+            img = transform(img)
+            img = img.unsqueeze(0)
+            img = img.to(self.device)
+
+            count += 1
+            recon, z, mu, logvar = self.vae(img)
             z = z.cpu().data
             for single_z in z:
                 features.append(list(single_z.detach().numpy()))
-            # if count == 3:
-            #     break
+            if count == 1000:
+                print(count)
         write_logger("--compute feature done!")
 
         save_list = []
@@ -476,56 +462,12 @@ class Adversary_sampler_trainer:
         writer.writerow(list(query_pool_indices))
         print("save img_id_list successfully")
 
-    def select_batch(self, n_sample, already_selected):
-        """
-
-        :param n_sample:
-        :param already_selected: list[int]
-        :return:
-        """
-        labeled_imageid = already_selected
-        labeled_data_loader, unlabeled_data_loader = self.build_data_loader(coco_data,
-                                                                           labeled_imageid=labeled_imageid)
-
-        self.vae.eval()
-        self.discriminator.eval()
-        self.vae = self.vae.to(self.device)
-        self.discriminator = self.discriminator.to(self.device)
-
-        all_preds = []
-        all_indices = []
-        csv_list = []
-        for images, _, indices in unlabeled_data_loader:
-            images = images.to(self.device)
-            with torch.no_grad():
-                _, _, mu, _ = self.vae(images)
-                preds = self.discriminator(mu)
-            preds = preds.cpu().data
-            all_preds.extend(preds)
-            all_indices.extend(indices)
-            length = len(indices)
-            for i in range(length):
-                csv_list.append([indices[i], mu[i]])
-
-        mu_csv = pd.DataFrame(columns=["index", "mu"], data=csv_list)
-        # mu_csv.to_csv("mu.csv", encoding="utf-8")
-        all_preds = torch.stack(all_preds)
-        all_preds = all_preds.view(-1)
-        # need to multiply by -1 to be able to use torch.topk
-        all_preds *= -1
-
-        # select the points which the discriminator things are the most likely to be unlabeled
-        print(n_sample)
-        _, query_indices = torch.topk(all_preds, int(n_sample))
-        query_pool_indices = np.asarray(all_indices)[query_indices]
 
         print(len(labeled_imageid))
         labeled_imageid.extend(list(query_pool_indices))
         print(query_pool_indices)
 
         return query_pool_indices
-
-
 
 
 # 用于检查所有图像能否可以被正确读取
@@ -580,8 +522,9 @@ if __name__ == '__main__':
 
     # 加载预训练模型
     trainer.load_weight(
-        vae_weight="weight/vae_model_14912_2500.pth",
-        dis_weight="weight/dis_model_14912_2500.pth")
+        vae_weight=os.path.join(WEIGHT_path, "vae_model_14912_2500.pth"),
+        dis_weight=os.path.join(WEIGHT_path, "dis_model_14912_2500.pth")
+    )
 
     # 构造训练用的dataloader
     # labeled_data, unlabeled_data = trainer.get_data_loader(
@@ -591,19 +534,21 @@ if __name__ == '__main__':
     # )
     labeled_data, unlabeled_data = trainer.build_data_loader(coco_data=coco_data)
     # 开始训练
-    trainer.train_vae_dis(labeled_data, unlabeled_data)
+    # trainer.train_vae_dis(labeled_data, unlabeled_data)
 
     # 传入的img_id生成隐变量的csv文件
-    # trainer.get_csv(img_list_path="imageid/all",
-    #                 save_name=VAE_feature_path)
-
+    # trainer.get_csv2(
+    #     img_list_path="/home/muyun99/Documents/al_ins_seg/liuy/adsampler/imageid/VAAL/2000",
+    #     save_name=VAE_feature_path
+    # )
+    # trainer.get_csv1(
+    #     img_list_path="/home/muyun99/Documents/al_ins_seg/liuy/adsampler/imageid/VAAL/2000",
+    #     save_name=VAE_feature_path
+    # )
     trainer.save_vae_feature(save_name=VAE_feature_path)
 
-    n_sample = 2000
+    # n_sample = 2000
     # trainer.sample(labeled_imageid_path="imageid/VAAL/2000",
     #                unlabeled_data_loader=unlabeled_data,
     #                n_sample=n_sample,
     #                save_path="imageid/VAAL/")
-
-    new_batch = trainer.select_batch(n_sample=n_sample,
-                         already_selected=[36, 49, 61])
