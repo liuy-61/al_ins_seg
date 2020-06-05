@@ -18,7 +18,7 @@ from liuy.utils.LiuyCoCoTrainer import LiuyCoCoTrainer
 from liuy.utils.ComputeLoss import LiuyComputeLoss
 from liuy.utils.LiuyTrainer import LiuyTrainer
 from liuy.utils.LiuyFeatureGetter import LiuyFeatureGetter
-from liuy.utils.local_cofig import coco_data, debug_data, MODEL_NAME
+from liuy.utils.local_config import coco_data, debug_data, MODEL_NAME
 from liuy.utils.K_means import read_image2class
 from liuy.implementation.LossSampler import LossSampler
 # the  config file of the model

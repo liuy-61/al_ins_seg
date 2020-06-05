@@ -1,5 +1,5 @@
 import os
-from liuy.utils.local_cofig import OUTPUT_DIR
+from liuy.utils.local_config import OUTPUT_DIR
 import sys
 import csv
 import pickle

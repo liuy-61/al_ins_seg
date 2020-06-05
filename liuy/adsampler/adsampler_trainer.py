@@ -3,7 +3,7 @@ from liuy.adsampler.adsampler_dataloader import MyDataSet, transform
 from liuy.adsampler.adsampler_model import Discriminator, VAE
 from liuy.adsampler.util import read_img_list
 import liuy.adsampler.config as config
-from liuy.utils.local_cofig import coco_data
+from liuy.utils.local_config import coco_data
 import torch
 import torch.optim as optim
 import logging
@@ -19,7 +19,7 @@ from liuy.implementation.CoCoSegModel import CoCoSegModel
 # from warmup_scheduler import GradualWarmupScheduler
 from torch.optim.lr_scheduler import CosineAnnealingLR, MultiStepLR
 from ranger import Ranger
-from liuy.utils.local_cofig import VAE_feature_path
+from liuy.utils.local_config import VAE_feature_path
 import codecs
 import csv
 from PIL import Image

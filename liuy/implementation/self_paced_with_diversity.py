@@ -8,7 +8,7 @@ import random
 from liuy.utils.K_means import read_image2class
 from liuy.utils.reg_dataset import register_a_cityscapes_from_selected_image_files, \
     register_coco_instances_from_selected_image_files
-from liuy.utils.local_cofig import coco_data, debug_data
+from liuy.utils.local_config import coco_data, debug_data
 
 
 def generate_one_curve(

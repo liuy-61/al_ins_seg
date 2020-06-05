@@ -8,7 +8,7 @@ from liuy.utils.reg_dataset import register_a_cityscapes_from_selected_image_fil
     register_coco_instances_from_selected_image_files
 from liuy.utils.img_list import save_img_list, read_img_list, get_iter
 import time
-from liuy.utils.local_cofig import coco_data, debug_data,OUTPUT_DIR
+from liuy.utils.local_config import coco_data, debug_data,OUTPUT_DIR
 import os
 
 

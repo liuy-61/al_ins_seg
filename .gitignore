@@ -2,7 +2,7 @@
 output
 instant_test_output
 inference_test_output
-liuy/utils/local_cnfig.py
+liuy/utils/local_config.py
 
 
 *.jpg
@@ -39,3 +39,5 @@ dist/
 # project dirs
 /datasets
 /models
+
+liuy/utils/local_config.py

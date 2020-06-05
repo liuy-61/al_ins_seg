@@ -4,13 +4,13 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 import torch.nn as nn
-from liuy.utils.local_cofig import OUTPUT_DIR
+from liuy.utils.local_config import OUTPUT_DIR
 import os
 from torch.utils.tensorboard import SummaryWriter
 from liuy.utils.torch_utils import select_device
 from liuy.implementation.CoCoSegModel import CoCoSegModel
 from liuy.utils.reg_dataset import register_coco_instances_from_selected_image_files
-from liuy.utils.local_cofig import coco_data
+from liuy.utils.local_config import coco_data
 from detectron2.engine import default_argument_parser
 # from liuy.utils.local_cofig import OUTPUT_DIR
 

@@ -11,7 +11,7 @@
 import os
 import pickle
 
-from liuy.utils.local_cofig import OUTPUT_DIR, VAE_feature_path
+from liuy.utils.local_config import OUTPUT_DIR, VAE_feature_path
 import numpy as np
 import pandas as pd
 from scipy.spatial import distance_matrix

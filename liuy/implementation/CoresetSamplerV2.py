@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from liuy.utils.local_cofig import OUTPUT_DIR
+from liuy.utils.local_config import OUTPUT_DIR
 from liuy.utils.save_mask_feature import read_mask_feature
 import os
 

@@ -2,7 +2,7 @@ import torch
 import os
 import pickle
 
-from liuy.utils.local_cofig import OUTPUT_DIR
+from liuy.utils.local_config import OUTPUT_DIR
 # from liuy.implementation.InsSegModel import OUTPUT_DIR
 def select_device(device='', apex=False):
     # device = 'cpu' or '0' or '0,1,2,3'

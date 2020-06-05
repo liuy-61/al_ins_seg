@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 
 from detectron2.engine import default_argument_parser
-from liuy.utils.local_cofig import OUTPUT_DIR, VAE_feature_path ,score_list_path
+from liuy.utils.local_config import OUTPUT_DIR, VAE_feature_path ,score_list_path
 import os
 from torch.utils.tensorboard import SummaryWriter
 
@@ -16,7 +16,7 @@ import torch.utils.data as Data
 from torch.utils.data import DataLoader
 import numpy as np
 from liuy.implementation.CoCoSegModel import CoCoSegModel
-from liuy.utils.local_cofig import coco_data,debug_data
+from liuy.utils.local_config import coco_data,debug_data
 from liuy.utils.create_curve import generate_base_model, load_base_model, read_selected_image_id
 from liuy.implementation.RandomSampler import CoCoRandomSampler
 from liuy.implementation.RegressorSampler import RegressionSampler

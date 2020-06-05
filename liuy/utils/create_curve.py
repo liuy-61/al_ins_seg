@@ -6,7 +6,7 @@ from liuy.utils.reg_dataset import register_coco_instances_from_selected_image_f
 import random
 import numpy as np
 from liuy.implementation import RandomSampler
-from liuy.utils.local_cofig import OUTPUT_DIR
+from liuy.utils.local_config import OUTPUT_DIR
 
 def generate_one_curve(
         whole_image_id,
