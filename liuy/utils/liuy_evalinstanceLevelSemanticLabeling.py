@@ -40,9 +40,9 @@ import fnmatch
 from copy import deepcopy
 
 # Cityscapes imports
-from cityscapesscripts.helpers.csHelpers import *
-from cityscapesscripts.evaluation.instances2dict import instances2dict
-
+# from cityscapesscripts.helpers.csHelpers import *
+# from cityscapesscripts.evaluation.instances2dict import instances2dict
+import numpy as np
 
 ###################################
 # PLEASE READ THESE INSTRUCTIONS!!!

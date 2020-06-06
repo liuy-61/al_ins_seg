@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from liuy.utils.local_cofig import OUTPUT_DIR
+from liuy.utils.local_config import OUTPUT_DIR
 import os
 from scipy.spatial import distance_matrix
 from liuy.utils.local_config import VAE_feature_path
