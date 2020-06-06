@@ -1,4 +1,5 @@
-import torch
+import numpy
+import random
 import numpy as np
 from liuy.utils.local_config import OUTPUT_DIR
 import os
@@ -7,31 +8,16 @@ from liuy.utils.local_config import VAE_feature_path
 
 import pandas as pd
 import copy
+import csv
 
-
-def cross_correlation(feature1, feature2):
-    """
-
-    :param feature1: tensor: (M,C,output_size,output_size)
-     M is total number of mask features' corresponding to a image
-    :param feature2: tensor: (N,C,output_size,output_size)
-    M is total number of mask features' corresponding to a image
-    :return: a scale represent the similarity between feature1 and feature2
-    """
-
-    """
-        compute the cross correlation (M * N) times,compute the every mask features between tow images
-    """
-    M = feature1.shape[0]
-    N = feature2.shape[0]
-    sum_similarity = 0
-    for i in range(M):
-        for j in range(N):
-            simlilarity = feature1[i] * feature2[j]
-            simlilarity = torch.sum(simlilarity)
-            sum_similarity += simlilarity
-    return sum_similarity / (M * N)
-
+def read_img_list(path):
+    with open(path, 'r') as f:
+        result = list(f.readlines())
+        img_str = result[0]
+        img_str = img_str.split(' ')
+        img_list = [int(item) for item in img_str]
+        print("--load {} samples".format(len(img_list)))
+        return img_list
 
 def mapfuc(feature):
     feature = feature[1:-1]
@@ -51,8 +37,10 @@ class CoreSetSampler:
         self.project_id = project_id
         self.whole_image_id_list = whole_image_id_list
 
-    def greedy_k_center(self, labeled, unlabeled, amount):
+    def greedy_k_center(self, labeled_idx, unlabeled_idx, representation, amount):
         greedy_indices = []
+        labeled = representation[labeled_idx, :]
+        unlabeled = representation[unlabeled_idx, :]
 
         # get the minimum distances between the labeled and unlabeled examples (iteratively, to avoid memory issues):
         min_dist = np.min(distance_matrix(labeled[0, :].reshape((1, labeled.shape[1])), unlabeled), axis=0)
@@ -69,22 +57,18 @@ class CoreSetSampler:
         # iteratively insert the farthest index and recalculate the minimum distances:
         farthest = np.argmax(min_dist)
         greedy_indices.append(farthest)
-        for i in range(amount - 1):
+        for i in range(amount-1):
             dist = distance_matrix(unlabeled[greedy_indices[-1], :].reshape((1, unlabeled.shape[1])), unlabeled)
             min_dist = np.vstack((min_dist, dist.reshape((1, min_dist.shape[1]))))
             min_dist = np.min(min_dist, axis=0)
             min_dist = min_dist.reshape((1, min_dist.shape[0]))
             farthest = np.argmax(min_dist)
             greedy_indices.append(farthest)
-        return np.array(greedy_indices)
+
+        greedy_indices = np.array(greedy_indices)
+        return unlabeled_idx[greedy_indices]
 
     def select_batch(self, n_sample, already_selected, **kwargs):
-        """
-        file_name as key to data
-        :param n_sample: batch size
-        :param kwargs:
-        :return: list of image_id you selected this batch
-        """
         latents = []
         df_feature = pd.read_csv(VAE_feature_path)
         feature_str = df_feature["feature"].values
@@ -93,8 +77,13 @@ class CoreSetSampler:
         latents = np.array(latents)
 
         all_img_list = copy.deepcopy(self.whole_image_id_list)
-        labeled_list = already_selected
+        labeled_list = copy.deepcopy(already_selected)
         unlabeled_list = np.setdiff1d(all_img_list, labeled_list)
+        for i in labeled_list:
+            for j in unlabeled_list:
+                if i == j:
+                    print("i == j1 {}".format(i))
+
         # 由于greedy_k_center是通过1，2，3的索引访问latens数组，最终返回的也是索引。而不是img_id，所以我们需要对img_id和索引index做一个映射的字典
         id2index = {}
         index2id = {}
@@ -110,16 +99,31 @@ class CoreSetSampler:
             unlabeled_list[i] = id2index[unlabeled_list[i]]
 
         sample_list = self.greedy_k_center(
-            labeled=latents[labeled_list, :],
-            unlabeled=latents[unlabeled_list, :],
+            labeled_idx=labeled_list,
+            unlabeled_idx=unlabeled_list,
+            representation=latents,
             amount=n_sample
         )
 
         for i in range(len(sample_list)):
             sample_list[i] = index2id[sample_list[i]]
+        for i in range(len(labeled_list)):
+            labeled_list[i] = index2id[labeled_list[i]]
+        for i in range(len(unlabeled_list)):
+            unlabeled_list[i] = index2id[unlabeled_list[i]]
 
         return list(sample_list)
 
 
 if __name__ == '__main__':
-    pass
+    random.seed(61)
+    whole_image_id_list = read_img_list("/home/muyun99/Desktop/coco_output/selected_img_list/coreset/100")
+
+    already_selected = random.sample(whole_image_id_list, 100)
+
+    coresetSampler = CoreSetSampler(
+        sampler_name='coreset',
+        project_id="coreset_test",
+        whole_image_id_list=whole_image_id_list
+    )
+    sample_list = coresetSampler.select_batch(n_sample=1000, already_selected=already_selected)

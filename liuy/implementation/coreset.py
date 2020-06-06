@@ -52,9 +52,6 @@ def generate_one_curve(
         n_sample = min(batch_size, whole_train_size - len(selected_image_id))
         new_batch = sampler.select_batch(n_sample=n_sample, already_selected=copy.deepcopy(selected_image_id))
 
-        print(selected_image_id)
-        print(new_batch)
-        
         selected_image_id.extend(new_batch)
         assert len(new_batch) == n_sample
         print('Requested: %d, Selected: %d' % (n_sample, len(new_batch)))
