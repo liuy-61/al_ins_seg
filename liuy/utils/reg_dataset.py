@@ -388,6 +388,7 @@ def register_coco_instances_from_selected_image_files(name, json_file,  image_ro
     MetadataCatalog.get(name).set(
         json_file=json_file, image_root=image_root, evaluator_type="coco", **metadata
     )
+
 def get_coco_person_dicts(json_file, image_root, dataset_name=None, extra_annotation_keys=None):
     """
         get a list of dicts, the dict only contain person class img and person ann
@@ -596,3 +597,31 @@ def register_coco_instances(name, json_file, image_root):
     MetadataCatalog.get(name).set(
         json_file=json_file, image_root=image_root, evaluator_type="coco", **metadata
     )
+
+
+def get_hw_dicts():
+    """
+
+    :return: a list[dict], dict : {'file_name': str :'the/path/to/image/2345.jpg',
+                                    'height': int,
+                                    'width': int,
+                                    'image_id': int,
+                                    'list[dict]': {'bbox': list[float],
+                                                   'bbox_mode': int},
+                                                   'category_id': int,
+                                                   'segmentation':list[list[float]] each list[float] is one
+                                                   simple polygon in the format of [x1, y1, ...,xn,yn]
+                                                   }
+    """
+
+
+def register_hw_instances(name):
+    """
+
+    :param name:
+    :return:
+    """
+    # 1. register a function which returns dicts
+    DatasetCatalog.register(name, lambda: get_hw_dicts(name))
+
+    
