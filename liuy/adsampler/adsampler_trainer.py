@@ -534,7 +534,7 @@ if __name__ == '__main__':
     # )
     labeled_data, unlabeled_data = trainer.build_data_loader(coco_data=coco_data)
     # 开始训练
-    # trainer.train_vae_dis(labeled_data, unlabeled_data)
+    trainer.train_vae_dis(labeled_data, unlabeled_data)
 
     # 传入的img_id生成隐变量的csv文件
     # trainer.get_csv2(

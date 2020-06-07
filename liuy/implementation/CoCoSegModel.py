@@ -359,7 +359,8 @@ def setup(args, project_id, coco_data, model_config, create_new_folder=True, tra
         cfg.OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'project_' + project_id)
     register_coco_instances(name='coco_train', json_file=coco_data[0]['json_file'],
                             image_root=coco_data[0]['image_root'])
-    register_coco_instances(name='coco_val', json_file=coco_data[1]['json_file'], image_root=coco_data[1]['image_root'])
+    register_coco_instances(name='coco_val', json_file=coco_data[1]['json_file'],
+                            image_root=coco_data[1]['image_root'])
     cfg.DATASETS.TEST = ['coco_val']
     cfg.DATASETS.TRAIN = ['coco_train']
     if train_size is not None:
