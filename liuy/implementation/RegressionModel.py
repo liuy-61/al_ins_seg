@@ -1,5 +1,6 @@
 import pickle
 import random
+import time
 
 import torch
 import torch.nn as nn
@@ -31,7 +32,7 @@ class Regression(torch.nn.Module):
     """
         this version of Regression use the mask_feature as data
     """
-    def __init__(self, regression_id, in_dim=64,n_hidden1=32,n_hidden2=16,n_hidden3=8,n_hidden4=4,out_dim=1):
+    def __init__(self, regression_id, in_dim=64, n_hidden1=32, n_hidden2=16, n_hidden3=8, n_hidden4=4, out_dim=1):
         super(Regression, self).__init__()
         self.layer1 = nn.Sequential(nn.Linear(in_dim, n_hidden1), nn.ReLU(True))
         self.layer2 = nn.Sequential(nn.Linear(n_hidden1, n_hidden2), nn.ReLU(True))
@@ -72,8 +73,6 @@ class Regression(torch.nn.Module):
             tensor = torch.from_numpy(item.reshape(1, -1))
             feature_tensor.append(tensor)
 
-
-
         data_tensor = feature_tensor[0]
         for i, item in enumerate(feature_tensor):
             if i != 0:
@@ -95,9 +94,6 @@ class Regression(torch.nn.Module):
             pre_list.append(pre_dict)
 
         return pre_list
-
-
-
 
 
 def train_regre(regression_model, feature_path, score_list_path, lr=0.0001, Epoch=1):
@@ -297,71 +293,67 @@ if __name__ == '__main__':
 
     args = default_argument_parser().parse_args()
     seg_model = CoCoSegModel(args, project_id='Base', coco_data=coco_data, resume_or_load=True)
-
     data_loader = seg_model.trainer.data_loader
     whole_image_id = [item['image_id'] for item in data_loader.dataset._dataset._lst]
 
-    # generate_base_model(whole_image_id=whole_image_id,
-    #                     coco_data=coco_data,
-    #                     ins_seg_model=seg_model,
-    #                     seed_batch=0.2,
-    #                     batch_size=0.1)
+    generate_base_model(whole_image_id=whole_image_id,
+                        coco_data=coco_data,
+                        ins_seg_model=seg_model,
+                        seed_batch=0.2,
+                        batch_size=0.1)
     """
         load the trained base models, and use base models to fit_on_single_data get score_list
         the score_list will be saved as OUTPUT_DIR/file/score_list
     """
-    # serial_num = 0
-    #
-    # sampler = CoCoRandomSampler(sampler_name='random',
-    #                             whole_image_id=whole_image_id)
-    #
-    # while True:
-    #     # the base model is generalized rcnn
-    #     base_model = load_base_model(project_id='Base',
-    #                                  serial_num=serial_num)
-    #
-    #     selected_image_id = read_selected_image_id(project_id='Base',
-    #                                                serial_num=serial_num)
-    #     serial_num += 1
-    #
-    #     if selected_image_id is not None:
-    #         seg_model.set_model(base_model)
-    #
-    #         # for last base model we do not fit_on_single_data
-    #         if len(selected_image_id) == len(whole_image_id):
-    #             break
-    #         else:
-    #             n_sample = int(0.005*len(whole_image_id))
-    #             if n_sample > len(whole_image_id)-len(selected_image_id):
-    #                 n_sample = len(whole_image_id)-len(selected_image_id)
-    #             new_batch = sampler.select_batch(n_sample=n_sample,
-    #                                              already_selected=selected_image_id)
-    #             selected_image_id.extend(selected_image_id)
-    #
-    #             seg_model.fit_on_single_data(new_batch)
-    #
-    #
-    #     else:
-    #         break
-    #
+    serial_num = 0
 
-    """
-        load VAE model, get VAE_feature, save the VAE feature
-    """
+    sampler = CoCoRandomSampler(sampler_name='random',
+                                whole_image_id=whole_image_id)
+
+    while True:
+        # the base model is generalized rcnn
+        base_model = load_base_model(project_id='Base',
+                                     serial_num=serial_num)
+
+        selected_image_id = read_selected_image_id(project_id='Base',
+                                                   serial_num=serial_num)
+        serial_num += 1
+
+        if selected_image_id is not None:
+            seg_model.set_model(base_model)
+
+            # for last base model we do not fit_on_single_data
+            if len(selected_image_id) == len(whole_image_id):
+                break
+            else:
+                n_sample = int(0.005*len(whole_image_id))
+                if n_sample > len(whole_image_id)-len(selected_image_id):
+                    n_sample = len(whole_image_id)-len(selected_image_id)
+                new_batch = sampler.select_batch(n_sample=n_sample,
+                                                 already_selected=selected_image_id)
+                selected_image_id.extend(selected_image_id)
+
+                seg_model.fit_on_single_data(new_batch)
 
 
-    """
-        train the regression model
-    """
+        else:
+            break
+
+    # waiting for VAE feature to be generated
+    while True:
+        if not os.path.exists(VAE_feature_path):
+            print('waiting for  VAE feature')
+            time.sleep(15)
+        else:
+            break
+    print('the VAE feature has been generated')
+
+    # train the regression model
     regression_model = Regression(regression_id='regression')
-
     train_regre(regression_model,
           feature_path=VAE_feature_path,
           score_list_path=score_list_path,
           Epoch=4)
-
-
-    # del seg_model
 
     predict_score = regression_model.get_predict(VAE_feature_path)
 

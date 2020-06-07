@@ -1,3 +1,6 @@
+import os
+import time
+
 from detectron2.engine import default_argument_parser
 from liuy.implementation.CoCoSegModel import CoCoSegModel
 from liuy.implementation.RandomSampler import CoCoRandomSampler
@@ -8,7 +11,8 @@ import random
 from liuy.utils.K_means import read_image2class
 from liuy.utils.reg_dataset import register_a_cityscapes_from_selected_image_files, \
     register_coco_instances_from_selected_image_files
-from liuy.utils.local_config import coco_data, debug_data
+from liuy.utils.local_config import coco_data, debug_data, VAE_feature_path
+from liuy.utils.K_means import k_means
 
 
 def generate_one_curve(
@@ -99,15 +103,23 @@ def generate_one_curve(
 
 if __name__ == "__main__":
     coco_data = debug_data
+
     args = default_argument_parser().parse_args()
     seg_model = CoCoSegModel(args, project_id='self_paced_with_diversity', coco_data=coco_data, resume_or_load=True)
     data_loader = seg_model.trainer.data_loader
-    whole_image_id = []
-    index_list = data_loader.dataset._dataset._lst
-    for item in index_list:
-        whole_image_id.append(item['image_id'])
+    whole_image_id = [item['image_id'] for item in data_loader.dataset._dataset._lst]
 
-    """"""
+    # waiting for VAE feature to be generated
+    while True:
+        if not os.path.exists(VAE_feature_path):
+            print('waiting for  VAE feature')
+            time.sleep(15)
+        else:
+            break
+    print('the VAE feature has been generated')
+
+    # use the VAE feature to cluster
+    k_means(feature_path=VAE_feature_path, k=50)
     image2class = read_image2class(k=50)
 
     losssampler = LossSampler('loss_sampler')
