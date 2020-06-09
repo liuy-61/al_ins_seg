@@ -22,9 +22,9 @@ for img in data['images']:
     ann_id = coco.getAnnIds(imgIds=img_id)
     ann = coco.loadAnns(ids=ann_id)
     data_2['annotations'].extend(ann)
-    if cnt > 1000:
+    if cnt > 10:
         break
 
 
 # 保存到新的JSON文件，便于查看数据特点
-json.dump(data_2,open('/media/tangyp/Data/coco/annotations/sub_train2014.json', 'w'), indent=4)
+json.dump(data_2,open('/media/tangyp/Data/coco/annotations/tiny_train2014.json', 'w'), indent=4)

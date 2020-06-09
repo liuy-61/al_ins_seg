@@ -138,7 +138,7 @@ class Adversary_sampler_trainer:
         # turn the whole_image_id from list[int] to numpy array,
         # get unlabeled_imageid & labeled imageid from the whole_image_id
         all_imageid = np.array(self.whole_image_id)
-        labeled_imageid = np.random.sample(all_imageid, int(all_imageid.size / 2), replace=False)
+        labeled_imageid = np.random.choice(all_imageid, int(all_imageid.size / 2), replace=False)
         unlabeled_imageid = np.setdiff1d(list(all_imageid), list(labeled_imageid))
 
         self.coco_data = coco_data

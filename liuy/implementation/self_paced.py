@@ -28,12 +28,12 @@ def generate_one_curve(
     # initally, seed_batch pieces of image were selected randomly
     selected_image_id = random.sample(whole_image_id, seed_batch)
     # register data set and build data loader
-    register_coco_instances_from_selected_image_files(name='coco_from_selected_image',
+    register_coco_instances_from_selected_image_files(name='coco_from_selected_image_id',
                                                       json_file=coco_data[0]['json_file'],
                                                       image_root=coco_data[0]['image_root'],
                                                       selected_image_files=selected_image_id)
     data_loader_from_selected_image_files, l = ins_seg_model.trainer.re_build_train_loader(
-        'coco_from_selected_image')
+        'coco_from_selected_image_id')
 
     n_batches = int(np.ceil(((whole_train_size - seed_batch) * 1 / batch_size))) + 1
     for n in range(n_batches):
