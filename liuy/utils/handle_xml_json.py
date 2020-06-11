@@ -17,6 +17,7 @@ def handle_xml(file_path, save_path=None):
     tree = ET.parse(file_path)
     # do something
 
+
 def handle_json(file_path, save_path=None):
     """
 
@@ -24,6 +25,9 @@ def handle_json(file_path, save_path=None):
         :param save_path:  if save_path is None, means save_path is same as file_path.
         :return:
     """
+    if save_path is None:
+        save_path = file_path
+
     with open(file_path, 'r') as f:
         json_data = json.load(f)
 

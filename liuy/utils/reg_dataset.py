@@ -402,6 +402,7 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
     # debug = 1
     # return dataset_person_dicts
 
+
 def register_coco_instances(name, json_file, image_root):
     """
     Register a dataset in COCO's json annotation format for
@@ -430,49 +431,37 @@ def register_coco_instances(name, json_file, image_root):
     )
 
 
-def get_hw_dicts():
+def get_hw_dicts(image_id=None):
     """
-
+    image_id: list[int], if given image_id, the returned dict_list only contain corresponding dict.
     :return: a list[dict], dict : {'file_name': str :'the/path/to/image/2345.jpg',
                                     'height': int,
                                     'width': int,
                                     'image_id': int,
-                                    'list[dict]': {'bbox': list[float],
-                                                   'bbox_mode': int},
-                                                   'category_id': int,
+                                    'annotations': list[dict]':
+                                                {  'bbox': list[float],
+                                                   'bbox_mode': int,
+                                                   'category_id':int,
                                                    'segmentation':list[list[float]] each list[float] is one
                                                    simple polygon in the format of [x1, y1, ...,xn,yn]
                                                    }
     """
-    return 0
+    dict_list = []
+    if image_id is not None:
+        dict_list = [dic for dic in dict_list if dic['image_id'] in image_id]
+    return dict_list
 
 
-def register_hw_instances(name):
+def register_hw_instances(name, image_id=None):
     """
 
+    :param image_id: see function get_hw_dicts
     :param name:
     :return:
     """
     # 1. register a function which returns dicts
-    DatasetCatalog.register(name, lambda: get_hw_dicts(name))
+    DatasetCatalog.register(name, lambda: get_hw_dicts(image_id))
+    MetadataCatalog.get(name).set(thing_classes=["person"])
 
 
-def get_hw_dicts_from_selected_image_files(selected_image_files):
-    """
 
-    :param selected_image_files:
-    :return:
-    """
-    dataset_dicts = get_hw_dicts()
-    dataset_dicts = [item for item in dataset_dicts if item['image_id'] in selected_image_files]
-    return dataset_dicts
-
-
-def register_hw_instances_from_selected_image_files(selected_image_files, name):
-    """
-
-    :param selected_image_files:
-    :return:
-    """
-    # 1. register a function which returns dicts
-    DatasetCatalog.register(name, lambda: get_hw_dicts(name))

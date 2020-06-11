@@ -4,8 +4,6 @@ import PIL.Image
 import PIL.ImageDraw
 
 
-debug = 1
-
 def get_segmentation(image_path):
     """
 
@@ -30,9 +28,9 @@ def get_segmentation(image_path):
             ls.append(y)
         segmentation.append(ls)
 
-    # cv2.drawContours(image, contours, -1, (0, 0, 255), 1)
-    # cv2.imshow("img", image)
-    # cv2.waitKey(0)
+    cv2.drawContours(image, contours, -1, (0, 0, 255), 2)
+    cv2.imshow("img", image)
+    cv2.waitKey(0)
 
     return segmentation
 
@@ -116,7 +114,7 @@ if __name__ == '__main__':
     """
     contours = bbox2contor(bbox)
 
-    image = cv2.imread(image_path)
-    cv2.drawContours(image, contours, -1, (0, 0, 255), 1)
-    cv2.imshow("img", image)
-    cv2.waitKey(0)
+    # image = cv2.imread(image_path)
+    # cv2.drawContours(image, contours, -1, (0, 0, 255), 1)
+    # cv2.imshow("img", image)
+    # cv2.waitKey(0)

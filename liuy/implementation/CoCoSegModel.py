@@ -1,15 +1,10 @@
 import cv2
 import os
 import dill as pickle
-import torch
 import copy
-from detectron2.data import DatasetCatalog, MetadataCatalog
 from detectron2.engine import default_setup, DefaultPredictor
 from detectron2.config.config import get_cfg
-from detectron2.utils.visualizer import Visualizer, ColorMode
-from liuy.Interface.BaseInsSegModel import BaseInsSegModel
 from detectron2.engine import default_argument_parser
-from detectron2.checkpoint import DetectionCheckpointer
 from liuy.utils.reg_dataset import register_a_cityscapes, register_coco_instances, \
     register_coco_instances_from_selected_image_files
 from liuy.utils.torch_utils import load_prj_model, select_device
@@ -19,8 +14,8 @@ from liuy.utils.ComputeLoss import LiuyComputeLoss
 from liuy.utils.LiuyTrainer import LiuyTrainer
 from liuy.utils.LiuyFeatureGetter import LiuyFeatureGetter
 from liuy.utils.local_config import coco_data, debug_data, MODEL_NAME
-from liuy.utils.K_means import read_image2class
-from liuy.implementation.LossSampler import LossSampler
+from liuy.utils.test import register_hw_instances
+from liuy.utils.local_config import tiny_train, tiny_val
 # the  config file of the model
 
 
@@ -359,10 +354,14 @@ def setup(args, project_id, coco_data, model_config, create_new_folder=True, tra
         cfg.OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'project_' + project_id)
     register_coco_instances(name='coco_train', json_file=coco_data[0]['json_file'],
                             image_root=coco_data[0]['image_root'])
+    # register_hw_instances(name='hw_train', file_path=tiny_train, train=True)
+    # register_hw_instances(name='hw_val', file_path=tiny_val, train=False)
     register_coco_instances(name='coco_val', json_file=coco_data[1]['json_file'],
                             image_root=coco_data[1]['image_root'])
     cfg.DATASETS.TEST = ['coco_val']
+    # cfg.DATASETS.TEST = ['hw_val']
     cfg.DATASETS.TRAIN = ['coco_train']
+    # cfg.DATASETS.TRAIN = ['hw_train']
     if train_size is not None:
         cfg.SOLVER.MAX_ITER = int((270000 * train_size) / 45174)
         cfg.SOLVER.STEPS = (int(cfg.SOLVER.MAX_ITER * 0.78), int(cfg.SOLVER.MAX_ITER * 0.925))
@@ -389,11 +388,13 @@ def get_folder_num(project_id):
 if __name__ == "__main__":
 
     args = default_argument_parser().parse_args()
-    seg_model = CoCoSegModel(args, project_id='coco',
+    seg_model = CoCoSegModel(args,
+                             project_id='debug_reg',
                              coco_data=coco_data,
                              model_config='Mask_RCNN',
                              resume_or_load=True)
-    seg_model.save_mask_features(json_file=coco_data[0]['json_file'],
-                                 image_root=coco_data[0]['image_root'],
-                                 selected_image_file=[])
+    # seg_model.save_mask_features(json_file=coco_data[0]['json_file'],
+    #                              image_root=coco_data[0]['image_root'],
+    #                              selected_image_file=[])
 
+    seg_model.fit()

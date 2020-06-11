@@ -76,7 +76,7 @@ def generate_one_curve(
 if __name__ == "__main__":
 
     args = default_argument_parser().parse_args()
-    seg_model = CoCoSegModel(args, project_id='debug', coco_data=debug_data, resume_or_load=True)
+    seg_model = CoCoSegModel(args, project_id='self_paced_', coco_data=coco_data, resume_or_load=True)
     data_loader = seg_model.trainer.data_loader
     whole_image_id = []
     index_list = data_loader.dataset._dataset._lst
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         whole_image_id.append(item['image_id'])
 
     losssampler = LossSampler('loss_sampler')
-    generate_one_curve(coco_data=debug_data,
+    generate_one_curve(coco_data=coco_data,
                        whole_image_id=whole_image_id,
                        sampler=losssampler,
                        ins_seg_model=seg_model,
