@@ -1,8 +1,8 @@
 from __future__ import print_function
 import json
 from pycocotools.coco import COCO
-# json_file='/media/tangyp/Data/coco/annotations/instances_val2014.json'
-json_file='/media/tangyp/Data/coco/annotations/instances_train2014.json'
+json_file='/media/tangyp/Data/coco/annotations/instances_val2014.json'
+# json_file='/media/tangyp/Data/coco/annotations/instances_train2014.json'
 data=json.load(open(json_file,'r'))
 coco = COCO(json_file)
 data_2={}
@@ -22,9 +22,9 @@ for img in data['images']:
     ann_id = coco.getAnnIds(imgIds=img_id)
     ann = coco.loadAnns(ids=ann_id)
     data_2['annotations'].extend(ann)
-    if cnt > 300:
+    if cnt > 40:
         break
 
 
 # 保存到新的JSON文件，便于查看数据特点
-json.dump(data_2, open('/media/tangyp/Data/coco/annotations/tiny_train2014.json', 'w'), indent=4)
+json.dump(data_2, open('/media/tangyp/Data/coco/annotations/tiny_val.json', 'w'), indent=4)

@@ -354,14 +354,14 @@ def setup(args, project_id, coco_data, model_config, create_new_folder=True, tra
         cfg.OUTPUT_DIR = os.path.join(OUTPUT_DIR, 'project_' + project_id)
     register_coco_instances(name='coco_train', json_file=coco_data[0]['json_file'],
                             image_root=coco_data[0]['image_root'])
-    # register_hw_instances(name='hw_train', file_path=tiny_train, train=True)
-    # register_hw_instances(name='hw_val', file_path=tiny_val, train=False)
+    register_hw_instances(name='hw_train', file_path=tiny_train, train=True)
+    register_hw_instances(name='hw_val', file_path=tiny_val, train=False)
     register_coco_instances(name='coco_val', json_file=coco_data[1]['json_file'],
                             image_root=coco_data[1]['image_root'])
-    cfg.DATASETS.TEST = ['coco_val']
-    # cfg.DATASETS.TEST = ['hw_val']
-    cfg.DATASETS.TRAIN = ['coco_train']
-    # cfg.DATASETS.TRAIN = ['hw_train']
+    # cfg.DATASETS.TEST = ['coco_val']
+    cfg.DATASETS.TEST = ['hw_val']
+    # cfg.DATASETS.TRAIN = ['coco_train']
+    cfg.DATASETS.TRAIN = ['hw_train']
     if train_size is not None:
         cfg.SOLVER.MAX_ITER = int((270000 * train_size) / 45174)
         cfg.SOLVER.STEPS = (int(cfg.SOLVER.MAX_ITER * 0.78), int(cfg.SOLVER.MAX_ITER * 0.925))

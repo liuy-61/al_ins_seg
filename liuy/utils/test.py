@@ -21,6 +21,7 @@ def extract_person(file_path):
             person_image_id.append(annotation['image_id'])
 
     person_image_id = set(person_image_id)
+    print('extract {} images for person class'.format(len(person_image_id)))
 
     person_images = []
     for image in json_data['images']:
@@ -71,7 +72,7 @@ def get_hw_dicts(file_path, train=True):
             if annotation['image_id'] == image['id']:
                 d = {'bbox': annotation['bbox'],
                      'bbox_mode': BoxMode.XYWH_ABS,
-                     'category_id': annotation['category_id'],
+                     'category_id': 0,
                      'segmentation': annotation['segmentation'],
                      }
                 annotations.append(d)
@@ -90,7 +91,7 @@ def register_hw_instances(name, file_path, train=True):
     """
     # 1. register a function which returns dicts
     DatasetCatalog.register(name, lambda: get_hw_dicts(file_path, train))
-    MetadataCatalog.get(name).set(thing_classes=["person"])
+    MetadataCatalog.get(name).set(thing_classes=["person"], evaluator_type="coco")
 
 
 
@@ -98,5 +99,7 @@ def register_hw_instances(name, file_path, train=True):
 
 if __name__ == '__main__':
     # dataset_dicts = get_hw_dicts(file_path=tiny_val, train=False)
-    dicts = get_hw_dicts(file_path=train)
-    debug = 1
+    # dicts = get_hw_dicts(file_path=train)
+    # debug = 1
+
+    extract_person(file_path=tiny_val)
