@@ -170,11 +170,12 @@ if __name__ == '__main__':
     # for k, v in model.state_dict():
     #
     args = get_args()
-    logging.basicConfig(filename=f'{args.name}.log', level=logging.INFO, format='%(levelname)s: %(message)s')
+    logging.basicConfig(filename=f'logs/{args.name}.log', level=logging.INFO, format='%(levelname)s: %(message)s')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     net = UNet_Pick(n_classes=1, n_channels=3)
     net.Unet.load_state_dict(
         torch.load("/home/muyun99/Desktop/MyGithub/person_seg/checkpoints/75_noise_pro/CP_epoch50.pth"))
+    net.QAM
 
     logging.info('Network:\n' +
                  '\t{} input channels\n'.format(net.Unet.n_channels) +

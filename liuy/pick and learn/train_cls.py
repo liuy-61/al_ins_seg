@@ -1,7 +1,7 @@
 import os
 import logging
-from model import UNet_Pick_cbam
-from utils.dataset_pick import BasicDataset, train_transform
+from model import UNet_Pick_cbam, UNet_Pick
+from utils.dataset_cls import BasicDataset, train_transform
 from torch.utils.data import DataLoader, random_split
 from torch.utils.tensorboard import SummaryWriter
 from torch import optim
@@ -10,7 +10,7 @@ from tqdm import tqdm
 import torch
 import argparse
 import sys
-from evaluate import eval_net_unet_pick
+from evaluate import eval_net_cls
 import torch_optimizer
 from model import UNet
 from utils.dice_loss_weight import dice_coeff
@@ -44,7 +44,7 @@ def train_net(net,
     test_dataset = BasicDataset(file_csv=args.test_csv,
                                 transform=train_transform)
 
-    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, pin_memory=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True,
                                 drop_last=True)
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True,
@@ -73,9 +73,9 @@ def train_net(net,
 
     optimizer = torch_optimizer.Ranger(net.parameters(), lr=lr, weight_decay=0.0005)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
-    loss_func = BinaryDiceLoss()
-    for name, parms in net.named_parameters():
-        print('-->name:', name, '-->grad_requirs:', parms.requires_grad,  ' -->grad_value:', parms.grad)
+    loss_func = nn.CrossEntropyLoss()
+    # for name, parms in net.named_parameters():
+    #     print('-->name:', name, '-->grad_requirs:', parms.requires_grad,  ' -->grad_value:', parms.grad)
 
     for epoch in range(epochs):
         net.train()
@@ -84,6 +84,7 @@ def train_net(net,
             for batch in train_dataloader:
                 imgs = batch['image']
                 true_masks = batch['mask']
+                label = batch['label']
                 assert imgs.shape[1] == net.Unet.n_channels, \
                     'Network has been defined with {} input channels, '.format(
                         net.n_channels) + 'but loaded images have {} channels. Please check that '.format(
@@ -92,27 +93,23 @@ def train_net(net,
                 imgs = imgs.to(device=device, dtype=torch.float32)
                 mask_type = torch.float32 if net.Unet.n_classes == 1 else torch.long
                 true_masks = true_masks.to(device=device, dtype=mask_type)
+                label = label.to(device)
 
-                mask_pred, weight_score = net(imgs, true_masks)
+                # mask_pred, score = net(imgs, true_masks)
+                score = net.QAM(imgs, true_masks)
+                # print(f'score is {score}')
+                # print(f'label is {label}')
+                loss = loss_func(score, label)
+                loss.backward()
+                epoch_loss += loss
 
-                # loss_func_normal = nn.BCEWithLogitsLoss()
-                # loss_normal = loss_func_normal(input=mask_pred, target=true_masks)
-                loss_weighted = loss_func(predict=mask_pred, target=true_masks, score=weight_score)
-                # print(f'mask_pred is {mask_pred}')
-                # print(f'score is {weight_score}')
-                # print(f'loss_normal is {loss_normal}')
-                # print(f'loss_weighted is {loss_weighted}')
-
-                epoch_loss += loss_weighted
-
-                writer.add_scalar('Loss/train', loss_weighted, global_step=global_step)
-                # writer.add_scalar('score/train', weight_score.item(), global_step=global_step)
-
-                pbar.set_postfix(**{'loss (batch)': loss_weighted})
+                # print(loss)
+                writer.add_scalar('Loss/train', loss.item(), global_step=global_step)
+                pbar.set_postfix(**{'loss (batch)': loss})
                 optimizer.zero_grad()
 
-                loss_weighted.backward()
-                nn.utils.clip_grad_value_(net.parameters(), 0.1)
+
+                # nn.utils.clip_grad_value_(net.parameters(), 0.1)
                 optimizer.step()
 
                 pbar.update(imgs.shape[0])
@@ -122,34 +119,28 @@ def train_net(net,
             for tag, value in net.named_parameters():
                 tag = tag.replace('.', '/')
                 writer.add_histogram('weights/' + tag, value.data.cpu().numpy(), global_step=global_step)
-                # writer.add_histogram('grads/' + tag, value.gard.data.cpu().numpy(), global_step=global_step)
-            val_score = eval_net_unet_pick(net, val_dataloader, device)
-            scheduler.step(val_score)
+            val_loss, val_acc = eval_net_cls(net, val_dataloader, device)
+            scheduler.step(val_loss)
             writer.add_scalar('learning_rate', optimizer.param_groups[0]['lr'], global_step=global_step)
 
-            if net.Unet.n_classes > 1:
-                logging.info('Validation cross entropy: {}'.format(val_score))
-                writer.add_scalar('Loss/valid', val_score, global_step=global_step)
-            else:
-                logging.info('Validation cross entropy: {}'.format(val_score))
-                writer.add_scalar('Dice/valid', val_score, global_step=global_step)
-
-            writer.add_images('images', imgs, global_step=global_step)
-            if net.Unet.n_classes == 1:
-                writer.add_images('masks/true', true_masks, global_step)
-                writer.add_images('masks/pred', torch.sigmoid(mask_pred) > 0.5, global_step)
+            logging.info('Validation cross entropy: {}'.format(val_loss))
+            writer.add_scalar('Loss/valid', val_loss, global_step=global_step)
+            logging.info('Validation accuracy: {}'.format(val_acc))
+            writer.add_scalar('Accuracy/valid', val_acc, global_step=global_step)
 
         if save_cp:
-            dir_checkpoint = os.path.join("checkpoints", args.name)
+            dir_checkpoint = os.path.join('/media/muyun99/DownloadResource/dataset/opends-Supervisely Person Dataset/checkpoints', args.name)
             if not os.path.exists(dir_checkpoint):
                 os.mkdir(dir_checkpoint)
                 logging.info('Create checkopint directory')
             torch.save(net.state_dict(), os.path.join(dir_checkpoint, 'CP_epoch{}.pth'.format(epoch + 1)))
             logging.info('Checkpoint {} saved!'.format(epoch + 1))
 
-    test_score = eval_net_unet_pick(net, test_dataloader, device)
-    logging.info('Test Dice Coeff: {}'.format(test_score))
-    writer.add_scalar('Dice/test', test_score, global_step=global_step)
+    test_loss, test_acc = eval_net_cls(net, test_dataloader, device)
+    logging.info('Test loss: {}'.format(test_loss))
+    writer.add_scalar('Dice/test', test_loss, global_step=global_step)
+    logging.info('Test accuracy: {}'.format(test_acc))
+    writer.add_scalar('Accuracy/train', test_acc, global_step=global_step)
     writer.close()
 
 
@@ -176,23 +167,31 @@ def get_args():
     return parser.parse_args()
 
 
-if __name__ == '__main__':
+def weight_init(m):
+    if isinstance(m, nn.Linear):
+        nn.init.xavier_normal_(m.weight)
+        nn.init.constant_(m.bias, 0)
+    elif isinstance(m, nn.Conv2d):
+        nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+    elif isinstance(m, nn.BatchNorm2d):
+        nn.init.constant_(m.weight, 1)
+        nn.init.constant_(m.bias, 0)
 
-    # for k, v in model.state_dict():
-    #
+
+if __name__ == '__main__':
+    # --train_csv "/home/muyun99/Desktop/supervisely/csv_cls/train.csv" --valid_csv "/home/muyun99/Desktop/supervisely/csv_cls/valid.csv" --test_csv "/home/muyun99/Desktop/supervisely/csv_cls/test.csv" --name cls_score --epochs 50
     args = get_args()
     logging.basicConfig(filename=f'logs/{args.name}.log', level=logging.INFO, format='%(levelname)s: %(message)s')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    net = UNet_Pick_cbam(n_classes=1, n_channels=3)
-    net.Unet.load_state_dict(
-        torch.load("/media/muyun99/DownloadResource/dataset/opends-Supervisely Person Dataset/checkpoints/75_noise_pro/CP_epoch50.pth"))
+    net = UNet_Pick(n_classes=1, n_channels=3)
+    net.apply(weight_init)
+
+    # net.Unet.load_state_dict(
+    #     torch.load("/media/muyun99/DownloadResource/dataset/opends-Supervisely Person Dataset/checkpoints/75_noise_pro/CP_epoch50.pth"))
 
     logging.info('Network:\n' +
                  '\t{} input channels\n'.format(net.Unet.n_channels) +
                  '\t{} output channels(classes)\n'.format(net.Unet.n_classes))
-    if args.load:
-        net.load_state_dict(torch.load(args.load, map_location=device))
-        logging.info('Model loaded form {}'.format(args.load))
 
     torch.backends.cudnn.benchmark = True
     torch.backends.cudnn.deterministic = False

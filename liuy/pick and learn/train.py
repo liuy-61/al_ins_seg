@@ -156,7 +156,7 @@ def get_args():
 
 if __name__ == '__main__':
     args = get_args()
-    logging.basicConfig(filename=f'{args.name}.log', level=logging.INFO, format='%(levelname)s: %(message)s')
+    logging.basicConfig(filename=f'logs/{args.name}.log', level=logging.INFO, format='%(levelname)s: %(message)s')
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     net = UNet(n_classes=1, n_channels=3)
     logging.info('Network:\n' +

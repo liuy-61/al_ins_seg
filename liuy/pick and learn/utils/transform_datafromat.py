@@ -8,7 +8,7 @@ import os
 
 img_savepath = "/home/muyun99/Desktop/supervisely/train"
 mask_savepath = "/home/muyun99/Desktop/supervisely/train_mask"
-sly_path = "/media/muyun99/DownloadResource/dataset/opends-Supervisely Person Dataset/Supervisely Person Dataset"
+sly_path = "7/media/muyun99/DownloadResource/dataset/opends-Supervisely Person Dataset/Supervisely Person Dataset"
 
 
 def display_images(images, img_idx, figsize=None):
